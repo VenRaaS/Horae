@@ -9,15 +9,15 @@ import Task
 
 
 class InvokeOfflineModel(Task.Task):
-    def run(self, msg) :
+    def exe(self, msg) :
         if hasattr(msg, 'attributes'):
             attributes = msg.attributes
             event_type = attributes['eventType']
             
             if 'OBJECT_FINALIZE' == event_type:            
-                bucket_id = attributes['bucketId']
-                object_id = attributes['objectId']
-                generation = attributes['objectGeneration']
+                bucket_id = attributes['bucketId'] if 'bucketId' in attributes else ''
+                object_id = attributes['objectId'] if 'objectId' in attributes else ''
+                generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 self.logger.info('%s %s %s %s', event_type, bucket_id, object_id, generation)
 
                 #-- valid root path
@@ -41,5 +41,10 @@ class InvokeOfflineModel(Task.Task):
 
 
 if '__main__' == __name__:
-    t = InvokeOfflineModel()
-    t.run('local testing message')
+    class Msg() :
+        def __init__(self):
+           self.attributes = {'eventType':'OBJECT_FINALIZE', 'objectId':'fake message'}
+
+    t = InvokeOfflineModel(Msg())
+    t.start()
+    t.join()
