@@ -21,6 +21,8 @@ class TaskStatus :
     def init(self) :
         with self.rlock:
             self.state = EnumState.INIT
+            self.start_dt = None
+            self.end_dt = None
 
     def start(self) :
         with self.rlock: 
@@ -40,7 +42,12 @@ class TaskStatus :
         with self.rlock: 
             delta_t = abs(self.end_dt - self.start_dt) if EnumState.END == self.state else abs(datetime.datetime.now() - self.start_dt)
             return delta_t.seconds
-        
+
+    def elapsed_afterend_sec(self):
+        with self.rlock: 
+            delta_t = abs(datetime.datetime.now() - self.end_dt) if EnumState.END == self.state else 0
+            return delta_t.seconds
+
     def __str__(self) :
        return str(self.__dict__)
 
