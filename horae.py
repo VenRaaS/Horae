@@ -9,13 +9,14 @@ import os
 import imp
 import sys
 
-#-- lib and plugin modules paths
+#-- lib/ and plugin/ modules paths
 file_path = os.path.dirname(os.path.realpath(__file__))
 plugin_path = os.path.join(file_path, 'plugin')
 lib_path = os.path.join(file_path, 'lib')
 if not plugin_path in sys.path: sys.path.append(plugin_path)
 if not lib_path in sys.path: sys.path.append(lib_path)
 import Task
+from hmessage import HMessage
 
 
 #-- logging setup
@@ -79,22 +80,60 @@ def load_plugin_modules():
                 logger.error(e, exc_info=True)
 
 
-def create_subscriber(project, subscription_name):
+def create_subscriber(project, sub_name):
     """
     Receives messages from a pull subscription.
     """
     #-- appply UnavailableIgnorePolicy to skip UNAVAILABLE
     subscriber = pubsub_v1.SubscriberClient(policy_class = UnavailableIgnorePolicy)
-    subscription_path = subscriber.subscription_path(project, subscription_name)
+    subscription_path = subscriber.subscription_path(project, sub_name)
 
-    subscriber.subscribe(subscription_path, callback=callback)
+    scb = sub_callback(sub_name)
+    subscriber.subscribe(subscription_path, callback=scb.callback)
 
     return {'client':subscriber, 'path':subscription_path}
 
 
-def receive_messages(project, subscription_name):
-    sub = create_subscriber(project, subscription_name)
+#TODO g_lock
+g_taskInstDict_lock = threading.RLock() 
+g_taskInstDict = {}
+class sub_callback() : 
+    def __init__(self, sub_name) :
+        self.sub_name = sub_name
+ 
+    def callback(self, msg) :
+	for mod_name, py_mod in g_pluginMods.iteritems():
+	    try:
+		#-- get class
+		taskCls = getattr(py_mod, mod_name)
+
+		#-- instantiate the object of plugin task class 
+		if issubclass(taskCls, Task.Task):
+                    msg = HMessage(msg)
+                    k = '{}/{}/{}'.format(self.sub_name, msg.get_eventType(), msg.get_codename())
+                    print k
+                    with g_taskInstDict_lock:
+                        if not k in g_taskInstDict:
+                           taskInst = taskCls(msg)
+                           taskInst.start()
+                           g_taskInstDict[k] = taskInst 
+#TODO gap check
+                        interval = taskCls.INVOKE_INTERVAL_SEC
+
+	    except Exception as e:
+		logger.error(e, exc_info=True)
+
+	msg.ack()
+
+
+def receive_messages(project, sub_name):
+    sub = create_subscriber(project, sub_name)
     logger.info('Listening for messages on %s', sub['path'])
+
+
+
+if '__main__' == __name__ :
+    receive_messages('venraasitri', 'pull_bucket_ven-custs')
 
     #-- The subscriber is non-blocking, so we must keep the main thread from
     #   exiting to allow it to process messages in the background.
@@ -105,32 +144,6 @@ def receive_messages(project, subscription_name):
             time.sleep(3)
     except KeyboardInterrupt:
         print "shutdown requested, exiting... "
-
-
-#... g_lock
-g_taskInsts = {}
-def callback(message) :
-    for mod_name, py_mod in g_pluginMods.iteritems():
-        try:
-            #-- get class
-            taskCls = getattr(py_mod, mod_name)
-
-            #-- instantiate the object of plugin task class 
-            if issubclass(taskCls, Task.Task):
-                interval = taskCls.INVOKE_INTERVAL_SEC
-                
-                taskInst = taskCls(message)
-#TODO gap check 
-                taskInst.start()
-
-        except Exception as e:
-            logger.error(e, exc_info=True)
-
-    message.ack()
-
-
-if '__main__' == __name__ :
-    receive_messages('venraasitri', 'pull_bucket_ven-custs')
 
     print 'end.'
 
