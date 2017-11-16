@@ -9,6 +9,14 @@ import os
 import imp
 import sys
 
+#-- lib and plugin modules paths
+file_path = os.path.dirname(os.path.realpath(__file__))
+plugin_path = os.path.join(file_path, 'plugin')
+lib_path = os.path.join(file_path, 'lib')
+if not plugin_path in sys.path: sys.path.append(plugin_path)
+if not lib_path in sys.path: sys.path.append(lib_path)
+import Task
+
 
 #-- logging setup
 formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
@@ -25,9 +33,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 #logger.addHandler(fh)
+ 
 
-
-class UnavailableIgnorePolicy(thread.Policy):
+class UnavailableIgnorePolicy(thread.Policy) :
     def on_exception(self, exception):
         """
         Ignore UNAVAILABLE.
@@ -42,52 +50,11 @@ class UnavailableIgnorePolicy(thread.Policy):
         #-- For anything else, propagate to super.
         super(UnavailableIgnorePolicy, self).on_exception(exception)
 
-def set_sys_path() :
-    curr_dir = os.path.dirname(os.path.realpath(__file__))
-    plugin_path = os.path.join(curr_dir, 'plugin')
-    lib_path = os.path.join(curr_dir, 'lib')
-     
-    #-- plugin module path
-    if not plugin_path in sys.path:
-        sys.path.append(plugin_path)
-
-    if not lib_path in sys.path:
-        sys.path.append(lib_path)
-
-
-def create_subscriber(project, subscription_name):
-    """
-    Receives messages from a pull subscription.
-    """
-    #-- appply UnavailableIgnorePolicy to skip UNAVAILABLE
-    subscriber = pubsub_v1.SubscriberClient(policy_class = UnavailableIgnorePolicy)
-    subscription_path = subscriber.subscription_path(project, subscription_name)
-
-    def callback(message):
-        for mod_name, py_mod in g_pluginMods.iteritems():
-            try:
-#TODO valid...
-                taskCls = getattr(py_mod, mod_name)
-
-                #-- instantiate the object of plugin task class 
-                taskInst = taskCls()
-#TODO gap check 
-                taskInst.run(message)
-
-            except Exception as e:
-                logger.error(e, exc_info=True)
-
-        message.ack()
-
-    subscriber.subscribe(subscription_path, callback=callback)
-
-    return {'client':subscriber, 'path':subscription_path}
-
 
 g_pluginMods = {}
 def load_plugin_modules():
-    curr_dir = os.path.dirname(os.path.realpath(__file__))
-    plugin_path = os.path.join(curr_dir, 'plugin')
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    plugin_path = os.path.join(file_path, 'plugin')
     
     #-- remove all to reflash existing plugins 
     g_pluginMods.clear()
@@ -112,12 +79,25 @@ def load_plugin_modules():
                 logger.error(e, exc_info=True)
 
 
+def create_subscriber(project, subscription_name):
+    """
+    Receives messages from a pull subscription.
+    """
+    #-- appply UnavailableIgnorePolicy to skip UNAVAILABLE
+    subscriber = pubsub_v1.SubscriberClient(policy_class = UnavailableIgnorePolicy)
+    subscription_path = subscriber.subscription_path(project, subscription_name)
+
+    subscriber.subscribe(subscription_path, callback=callback)
+
+    return {'client':subscriber, 'path':subscription_path}
+
+
 def receive_messages(project, subscription_name):
     sub = create_subscriber(project, subscription_name)
     logger.info('Listening for messages on %s', sub['path'])
 
-    # The subscriber is non-blocking, so we must keep the main thread from
-    # exiting to allow it to process messages in the background.
+    #-- The subscriber is non-blocking, so we must keep the main thread from
+    #   exiting to allow it to process messages in the background.
     try:
         while True:
             load_plugin_modules()
@@ -126,8 +106,30 @@ def receive_messages(project, subscription_name):
     except KeyboardInterrupt:
         print "shutdown requested, exiting... "
 
+
+#... g_lock
+g_taskInsts = {}
+def callback(message) :
+    for mod_name, py_mod in g_pluginMods.iteritems():
+        try:
+            #-- get class
+            taskCls = getattr(py_mod, mod_name)
+
+            #-- instantiate the object of plugin task class 
+            if issubclass(taskCls, Task.Task):
+                interval = taskCls.INVOKE_INTERVAL_SEC
+                
+                taskInst = taskCls(message)
+#TODO gap check 
+                taskInst.start()
+
+        except Exception as e:
+            logger.error(e, exc_info=True)
+
+    message.ack()
+
+
 if '__main__' == __name__ :
-    set_sys_path()
     receive_messages('venraasitri', 'pull_bucket_ven-custs')
 
     print 'end.'
