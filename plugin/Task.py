@@ -8,14 +8,17 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
 if not lib_path in sys.path : sys.path.append(lib_path)
 from event import EnumEvent, EnumTopic
+from subscr import EnumSubscript
 from tstatus import TaskStatus 
+
 
 
 class Task(threading.Thread) :
     #-- configuration
-    INVOKE_INTERVAL_SEC = 10 
+    INVOKE_INTERVAL_SEC = 30
+    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
-    LISTEN_TOPICS = [ EnumTopic['bucket_ven-custs'] ]
+    PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
 
     def __init__(self, sub_msg) :
         threading.Thread.__init__(self)
@@ -39,11 +42,11 @@ class Task(threading.Thread) :
 
     def exe(self, msg) :
         self.logger.info(msg)
-        if hasattr(msg, 'attributes'):
-            self.logger.info(msg.attributes)
+#        if hasattr(msg, 'attributes'):
+#            self.logger.info(msg.attributes)
 
-        if hasattr(msg, 'data'):
-            self.logger.info(msg.data)
+#        if hasattr(msg, 'data'):
+#            self.logger.info(msg.data)
 
  
     def pub(self) :
@@ -59,7 +62,7 @@ class Task(threading.Thread) :
         self.pub()
 
         self.st.end()
-#        print self.st.elapsed_sec()
+        print self.st.state
 
 
 if '__main__' == __name__:

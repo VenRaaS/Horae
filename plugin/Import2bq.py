@@ -12,20 +12,18 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
 if not lib_path in sys.path : sys.path.append(lib_path)
 from event import EnumEvent, EnumTopic
-from tstatus import TaskStatus 
+from subscr import EnumSubscript
 
 
 class Import2bq(Task.Task):
-    INVOKE_INTERVAL_SEC = 600
-
-    LISTEN_TOPICS = [ EnumTopic['bucket_ven-custs'] ]
+    INVOKE_INTERVAL_SEC = 3600
+    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
+    PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
 
-    PUB_TOPICS = [ EnumTopic['bigquery_unima_gocc'] ]
-
-    def exe(self, msg) :
-        if hasattr(msg, 'attributes'):
-            attributes = msg.attributes
+    def exe(self, hmsg) :
+        if hasattr(hmsg.msg, 'attributes'):
+            attributes = hmsg.msg.attributes
             event_type = attributes['eventType']
             
             if 'OBJECT_FINALIZE' == event_type:            
@@ -42,7 +40,7 @@ class Import2bq(Task.Task):
                     #-- valid file name 
                     if m :
                         date = m.group(1)
-                        code_name = bucket_id.split('-')[-1]
+                        codename = bucket_id.split('-')[-1]
 
                         unpackPath = os.path.join('/tmp', bucket_id, date)
                         cmd = 'rm -rf {}'.format(unpackPath) 
@@ -84,17 +82,17 @@ class Import2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
                        
                         gsPath_goods = os.path.join(gsDataPath, 'Goods.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_{} {} GID:string,PGID:string,GOODS_NAME:string,GOODS_KEYWORD:string,GOODS_BRAND:string,GOODS_DESCRIBE:string,GOODS_SPEC:string,GOODS_IMG_URL:string,AVAILABILITY:string,CURRENCY:string,SALE_PRICE:string,PROVIDER:string,BARCODE_EAN13:string,BARCODE_UPC:string,FIRST_RTS_DATE:string,UPDATE_TIME:string'.format(code_name, date, gsPath_goods)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_{} {} GID:string,PGID:string,GOODS_NAME:string,GOODS_KEYWORD:string,GOODS_BRAND:string,GOODS_DESCRIBE:string,GOODS_SPEC:string,GOODS_IMG_URL:string,AVAILABILITY:string,CURRENCY:string,SALE_PRICE:string,PROVIDER:string,BARCODE_EAN13:string,BARCODE_UPC:string,FIRST_RTS_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_goods)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         gsPath_category = os.path.join(gsDataPath, 'Category.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_category_{} {} CATEGORY_NAME:string,CATEGORY_CODE:string,P_CATEGORY_CODE:string,LE:string,UPDATE_TIME:string'.format(code_name, date, gsPath_category)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_category_{} {} CATEGORY_NAME:string,CATEGORY_CODE:string,P_CATEGORY_CODE:string,LE:string,UPDATE_TIME:string'.format(codename, date, gsPath_category)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         gsPath_gcc = os.path.join(gsDataPath, 'GoodsCateCode.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_cate_code_{} {} GID:string,CATEGORY_CODE:string,LE:string,SORT:string,FUNC_TYPE:string,INSERT_DATE:string,DISPLAY_START_DATE:string,DISPLAY_END_DATE:string,UPDATE_TIME:string'.format(code_name, date, gsPath_gcc)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_cate_code_{} {} GID:string,CATEGORY_CODE:string,LE:string,SORT:string,FUNC_TYPE:string,INSERT_DATE:string,DISPLAY_START_DATE:string,DISPLAY_END_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_gcc)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
