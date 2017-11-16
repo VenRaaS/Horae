@@ -40,7 +40,11 @@ class Task(threading.Thread) :
     def exe(self, msg) :
         self.logger.info(msg)
         if hasattr(msg, 'attributes'):
-            self.logger.info(msg)
+            self.logger.info(msg.attributes)
+
+        if hasattr(msg, 'data'):
+            self.logger.info(msg.data)
+
  
     def pub(self) :
         pass
