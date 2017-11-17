@@ -77,7 +77,7 @@ def load_plugin_modules() :
 
                 g_pluginMods[mod_name] = py_mod
 
-                logger.info("Loaded module: %s", mod_fname);
+                logger.info("Loaded module: %s", mod_name);
             except Exception as e:
                 logger.error(e, exc_info=True)
 
@@ -104,35 +104,38 @@ class sub_callback() :
         self.subscript = subscript
  
     def callback(self, msg) :
-	for mod_name, py_mod in g_pluginMods.iteritems():
+        for mod_name, py_mod in g_pluginMods.iteritems():
             try:
-		#-- get class
-		taskClass = getattr(py_mod, mod_name)
+                #-- get class
+                taskClass = getattr(py_mod, mod_name)
+
+                hMsg = HMessage(msg)
+                eventType = hMsg.get_eventType()
 
                 #-- must inherit Task.Task
-		if not issubclass(taskClass, Task.Task): continue
+                logger.info('%s, %s issubclass of Task.Task: %s', eventType, taskClass, issubclass(taskClass, Task.Task))
+                if not issubclass(taskClass, Task.Task): continue
                 
-		hMsg = HMessage(msg)
                 #-- math Subscription and eventType between message and plugin class (taskClass)
-                if not self.subscript                  in taskClass.LISTEN_SUBSCRIPTS: continue
-                if not EnumEvent[hMsg.get_eventType()] in taskClass.LISTEN_EVENTS: continue
+                if not self.subscript       in taskClass.LISTEN_SUBSCRIPTS: continue
+                if not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
 
-		#-- instantiate the object of plugin task class 
-		k = '{}/{}/{}/{}'.format(self.subscript.name, hMsg.get_eventType(), hMsg.get_codename(), mod_name)
+                #-- instantiate the object of plugin task class 
+                k = 'task instance key: {}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
                 logger.info(k)
 
-		with g_taskInstDict_lock:
-		    if not k in g_taskInstDict:
-		        taskInst = taskClass(hMsg)
-		        g_taskInstDict[k] = taskInst
-		        taskInst.start()
+                with g_taskInstDict_lock:
+                    if not k in g_taskInstDict:
+                        taskInst = taskClass(hMsg)
+                        g_taskInstDict[k] = taskInst
+                        taskInst.start()
                     else:
                         logger.info('skip message due to task:%s is not expired yet, %s', k, hMsg)
 
-	    except Exception as e:
-		logger.error(e, exc_info=True)
+            except Exception as e:
+                logger.error(e, exc_info=True)
 
-	msg.ack()
+        msg.ack()
 
 
 def receive_messages(project, subscript):
