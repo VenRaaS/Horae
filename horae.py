@@ -121,8 +121,8 @@ class sub_callback() :
                 if not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
 
                 #-- instantiate the object of plugin task class 
-                k = 'task instance key: {}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
-                logger.info(k)
+                k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
+                logger.info('task instance key: %s', k)
 
                 with g_taskInstDict_lock:
                     if not k in g_taskInstDict:
@@ -130,7 +130,7 @@ class sub_callback() :
                         g_taskInstDict[k] = taskInst
                         taskInst.start()
                     else:
-                        logger.info('skip message due to task:%s is not expired yet, %s', k, hMsg)
+                        logger.info('skip message due to task: %s is not expired yet, %s', k, hMsg)
 
             except Exception as e:
                 logger.error(e, exc_info=True)
@@ -161,7 +161,7 @@ if '__main__' == __name__ :
                         del g_taskInstDict[k]
                         print "del ", k
 
-            time.sleep(3)
+            time.sleep(30)
                 
     except KeyboardInterrupt:
         print "shutdown requested, exiting... "
