@@ -16,7 +16,7 @@ from subscr import EnumSubscript
 
 
 class Import2bq(Task.Task):
-    INVOKE_INTERVAL_SEC = 3600
+    INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
@@ -130,11 +130,12 @@ class Import2bq(Task.Task):
 
 
 if '__main__' == __name__:
-    class Msg() :
+    class MockMsg() :
         def __init__(self):
            self.attributes = {'eventType':'OBJECT_FINALIZE', 'objectId':'fake message'}
-
-    m = Msg()
-    t = Import2bq(m)
+    
+    from hmessage import HMessage
+    hmsg = HMessage(MockMsg())  
+    t = Import2bq(hmsg)
     t.start()
     t.join()
