@@ -1,5 +1,4 @@
 
-
 class HMessage() :
     def __init__(self, pb_msg) :
         self.msg = pb_msg
