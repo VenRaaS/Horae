@@ -62,7 +62,7 @@ class Task(threading.Thread) :
         self.pub()
 
         self.st.end()
-        print self.st.state
+        self.logger.info(self.st.state)
 
 
 if '__main__' == __name__:
