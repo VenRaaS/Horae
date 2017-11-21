@@ -120,12 +120,12 @@ class sub_callback() :
                 if not self.subscript       in taskClass.LISTEN_SUBSCRIPTS: continue
                 if not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
 
-                #-- instantiate the object of plugin task class 
                 k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
                 logger.info('task instance key: %s', k)
 
                 with g_taskInstDict_lock:
-                    if not k in g_taskInstDict:
+                    if not k in g_taskInstDict or EnumState.END == g_taskInstDict[k].st.state:
+                        #-- instantiate the object of plugin task class 
                         taskInst = taskClass(hMsg)
                         g_taskInstDict[k] = taskInst
                         taskInst.start()
