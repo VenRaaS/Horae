@@ -98,16 +98,16 @@ class Import2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
 
                         dt = datetime.datetime.strptime(date, '%Y%m%d')
-                        yest_date = dt.date() - datetime.timedelta(days=1)
-                        gsPath_order = os.path.join(gsDataPath, 'OrderList_{}.tsv'.format(yest_date('%Y%m%d')))
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.OrderList_{} {} GID:string,CATEGORY_CODE:string,LE:string,SORT:string,FUNC_TYPE:string,INSERT_DATE:string,DISPLAY_START_DATE:string,DISPLAY_END_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_order)
+                        yest_date = (dt.date() - datetime.timedelta(days=1)).strftime('%Y%m%d')
+                        gsPath_order = os.path.join(gsDataPath, 'OrderList_{}.tsv'.format(yest_date))
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.OrderList_{} {} UID:string,ORDER_NO:string,SEQ:string,ORDER_DATE:DATETIME,GID:string,CURRENCY:string,SALE_PRICE:float,FINAL_PRICE:float,QTY:integer,FINAL_AMT:float,PROMO_ID:string,AFFILIATE_ID:string,DC_PRICE:float,DELIVERY_TYPE:string,UPDATE_TIME:DATETIME'.format(codename, yest_date, gsPath_order)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
                         self.logger.info(cmd)
-                        subprocess.call(cmd.split(' '))
+#                        subprocess.call(cmd.split(' '))
 
     def check_file_encoding(self, dirPath) :
         for fname in os.listdir(dirPath):
