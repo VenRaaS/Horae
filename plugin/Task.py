@@ -14,11 +14,14 @@ from tstatus import TaskStatus
 
 
 class Task(threading.Thread) :
+    isTask = True
+
     #-- configuration
     INVOKE_INTERVAL_SEC = 30
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
+
 
     def __init__(self, sub_msg) :
         threading.Thread.__init__(self)
@@ -48,21 +51,25 @@ class Task(threading.Thread) :
 #        if hasattr(msg, 'data'):
 #            self.logger.info(msg.data)
 
- 
     def pub(self) :
         pass
     
     #-- thread entry point
     #   https://docs.python.org/2/library/threading.html#thread-objects
     def run(self) :
-        self.st.start()
-        self.exe(self.sub_msg)
+        try:
+            self.st.start()
+            self.exe(self.sub_msg)
 
-        self.st.pub()
-        self.pub()
+            self.st.pub()
+            self.pub()
 
-        self.st.end()
-        self.logger.info(self.st.state)
+        except Exception as e:
+            self.logger.error(e, exc_info=True)
+
+        finally: 
+            self.st.end()
+            self.logger.info(self.st.state)
 
 
 if '__main__' == __name__:
