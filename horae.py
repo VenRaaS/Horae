@@ -113,8 +113,8 @@ class sub_callback() :
                 eventType = hMsg.get_eventType()
 
                 #-- must inherit Task.Task
-                logger.info('%s, %s issubclass of Task.Task: %s', eventType, taskClass, issubclass(taskClass, Task.Task))
-                if not issubclass(taskClass, Task.Task): continue
+                logger.info('%s, %s is inherited from Task.Task: %s', eventType, taskClass, hasattr(taskClass, 'isTask'))
+                if not hasattr(taskClass, 'isTask'): continue
                 
                 #-- math Subscription and eventType between message and plugin class (taskClass)
                 if not self.subscript       in taskClass.LISTEN_SUBSCRIPTS: continue
@@ -156,10 +156,10 @@ if '__main__' == __name__ :
                 keys = g_taskInstDict.keys()
                 for k in keys:
                     taskInst = g_taskInstDict[k]
-                    if EnumState.END != taskInst.st.state: continue
-                    if taskInst.INVOKE_INTERVAL_SEC < taskInst.st.elapsed_afterend_sec():
-                        del g_taskInstDict[k]
-                        print "del ", k
+                    if EnumState.END == taskInst.st.state:
+                        if taskInst.INVOKE_INTERVAL_SEC < taskInst.st.elapsed_afterend_sec():
+                            del g_taskInstDict[k]
+                            logger.info('del %s',format(k))
 
             time.sleep(30)
                 
