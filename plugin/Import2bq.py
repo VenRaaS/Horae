@@ -28,22 +28,22 @@ class Import2bq(Task.Task):
             event_type = hmsg.get_eventType()
             
             if 'OBJECT_FINALIZE' == event_type:            
-                bucket_id = attributes['bucketId'] if 'bucketId' in attributes else ''
-                object_id = attributes['objectId'] if 'objectId' in attributes else ''
+                bucketId = attributes['bucketId'] if 'bucketId' in attributes else ''
+                objectId = attributes['objectId'] if 'objectId' in attributes else ''
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
-                self.logger.info('%s %s %s %s', event_type, bucket_id, object_id, generation)
+                self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
                 #-- valid root path
-                if object_id.split('/')[0] == 'tmp' or object_id.split('/')[0] == 'gocc': 
-#                if object_id.split('/')[0] == 'gocc' : 
-                    m = re.match(r'gocc_(\d{8})\.tar\.gz$', object_id[-20:]) 
+                if objectId.split('/')[0] == 'tmp' or objectId.split('/')[0] == 'gocc': 
+#                if objectId.split('/')[0] == 'gocc' : 
+                    m = re.match(r'gocc_(\d{8})\.tar\.gz$', objectId[-20:]) 
 
                     #-- valid file name 
                     if m :
                         date = m.group(1)
-                        codename = bucket_id.split('-')[-1]
+                        codename = bucketId.split('-')[-1]
 
-                        unpackPath = os.path.join('/tmp', bucket_id, date)
+                        unpackPath = os.path.join('/tmp', bucketId, date)
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         subprocess.call(cmd.split(' '))
                         self.logger.info(cmd)
@@ -52,12 +52,12 @@ class Import2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
                         self.logger.info(cmd)
 
-                        bkName = 'gs://' + os.path.join(bucket_id, object_id)
+                        bkName = 'gs://' + os.path.join(bucketId, objectId)
                         cmd = 'gsutil cp {} {}'.format(bkName, unpackPath)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
-                        tarPath = os.path.join(unpackPath, object_id.split('/')[-1])
+                        tarPath = os.path.join(unpackPath, objectId.split('/')[-1])
                         cmd = 'tar -xvf {} -C {}'.format(tarPath, unpackPath)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
@@ -77,7 +77,7 @@ class Import2bq(Task.Task):
 
                        
                         #-- copy to GCS 
-                        gsDataPath = os.path.join('gs://', bucket_id, 'tmp', 'gocc', date)
+                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', 'gocc', date)
                         cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
