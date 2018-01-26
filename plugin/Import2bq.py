@@ -23,9 +23,9 @@ class Import2bq(Task.Task):
     PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
 
     def exe(self, hmsg) :
-        if hasattr(hmsg.msg, 'attributes'):
-            attributes = hmsg.msg.attributes
-            event_type = attributes['eventType']
+        if hmsg.get_attributes() :
+            attributes = hmsg.get_attributes()
+            event_type = hmsg.get_eventType()
             
             if 'OBJECT_FINALIZE' == event_type:            
                 bucket_id = attributes['bucketId'] if 'bucketId' in attributes else ''

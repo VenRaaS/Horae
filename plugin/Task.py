@@ -44,7 +44,7 @@ class Task(threading.Thread) :
             self.logger.addHandler(ch)
 
     def exe(self, msg) :
-        self.logger.info(msg)
+        self.logger.info(msg.get_attributes())
 #        if hasattr(msg, 'attributes'):
 #            self.logger.info(msg.attributes)
 
