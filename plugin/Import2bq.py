@@ -19,7 +19,7 @@ from subscr import EnumSubscript
 class Import2bq(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
-    LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
+    LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE.name ]
     PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
 
     def exe(self, hmsg) :
@@ -27,7 +27,7 @@ class Import2bq(Task.Task):
             attributes = hmsg.get_attributes()
             event_type = hmsg.get_eventType()
             
-            if 'OBJECT_FINALIZE' == event_type:            
+            if event_type in LISTEN_EVENTS:
                 bucketId = attributes['bucketId'] if 'bucketId' in attributes else ''
                 objectId = attributes['objectId'] if 'objectId' in attributes else ''
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
@@ -43,7 +43,8 @@ class Import2bq(Task.Task):
                         date = m.group(1)
                         codename = bucketId.split('-')[-1]
 
-                        unpackPath = os.path.join('/tmp', bucketId, date)
+                        folder = '_'.join([bucketId, 'gocc', date])
+                        unpackPath = os.path.join('/tmp', folder)
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         subprocess.call(cmd.split(' '))
                         self.logger.info(cmd)
