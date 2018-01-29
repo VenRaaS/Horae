@@ -77,8 +77,9 @@ class ImportGOCC2bq(Task.Task):
                         subprocess.call([cmd], shell=True)
 
                        
-                        #-- copy to GCS 
-                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', 'gocc', date)
+                        #-- copy to GCS
+                        gsTmpFolder = '_'.join(['gocc', date])
+                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
                         cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
@@ -109,6 +110,11 @@ class ImportGOCC2bq(Task.Task):
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
                         self.logger.info(cmd)
 #                        subprocess.call(cmd.split(' '))
+
+                        cmd = 'rm -rf {}'.format(unpackPath) 
+                        subprocess.call(cmd.split(' '))
+                        self.logger.info(cmd)
+
 
     def check_file_encoding(self, dirPath) :
         for fname in os.listdir(dirPath):
