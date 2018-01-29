@@ -19,23 +19,22 @@ from subscr import EnumSubscript
 class ImportGOCC2bq(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
-    LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE.name ]
-    PUB_TOPIC = EnumTopic['bigquery_unima_gocc']
+    LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
+    PUB_TOPIC = EnumTopic.bigquery_unima
 
     def exe(self, hmsg) :
         if hmsg.get_attributes() :
             attributes = hmsg.get_attributes()
             event_type = hmsg.get_eventType()
             
-            if event_type in LISTEN_EVENTS:
+            if EnumEvent[event_type] in ImportGOCC2bq.LISTEN_EVENTS:
                 bucketId = attributes['bucketId'] if 'bucketId' in attributes else ''
                 objectId = attributes['objectId'] if 'objectId' in attributes else ''
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
                 #-- valid root path
-                if objectId.split('/')[0] == 'tmp' or objectId.split('/')[0] == 'gocc': 
-#                if objectId.split('/')[0] == 'gocc' : 
+                if objectId.split('/')[0] == 'gocc' or objectId.split('/')[0] == 'tmp':
                     m = re.match(r'gocc_(\d{8})\.tar\.gz$', objectId[-20:]) 
 
                     #-- valid file name 
@@ -141,10 +140,10 @@ class ImportGOCC2bq(Task.Task):
 if '__main__' == __name__:
     class MockMsg() :
         def __init__(self):
-           self.attributes = {'eventType':'OBJECT_FINALIZE', 'objectId':'fake message'}
+           self.message = {'ImportGOCC2bq':{'eventType':'OBJECT_FINALIZE', 'objectId':'fake message'}}
     
     from hmessage import HMessage
-    hmsg = HMessage(MockMsg())  
-    t = Import2bq(hmsg)
+    hmsg = HMessage(MockMsg().message)  
+    t = ImportGOCC2bq(hmsg)
     t.start()
     t.join()
