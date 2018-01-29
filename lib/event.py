@@ -8,6 +8,6 @@ class EnumEvent(Enum) :
     OBJECT_DELETE = 2
 
 #-- seprate by a SPACE
-EnumTopic = Enum('EnumTopic', 'bucket_ven-custs bigquery_unima_gocc')
+EnumTopic = Enum('EnumTopic', 'bucket_ven-custs bigquery_unima es_cluster')
 
 
