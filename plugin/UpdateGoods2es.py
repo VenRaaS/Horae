@@ -36,6 +36,7 @@ class UpdateGoods2es(Task.Task):
                 self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
                 #-- valid path in GCS
+                #   gocc/update/sohappy_gocc_20180111.tar.gz
                 gsPaths = objectId.split('/')
                 if 3 == len(gsPaths) and gsPaths[0] == 'gocc' and gsPaths[1] == 'update' :
                     m = re.match(r'gocc_(\d{8})\.tar\.gz$', objectId[-20:]) 
@@ -65,8 +66,6 @@ class UpdateGoods2es(Task.Task):
                         subprocess.call(cmd.split(' '))
                         
                         dataPath = os.path.join(unpackPath, 'data')
-                        return
-                        
 
                         #-- check file format
                         self.check_num_fields(dataPath)
@@ -79,6 +78,49 @@ class UpdateGoods2es(Task.Task):
                         # subprocess - https://docs.python.org/2/library/subprocess.html#using-the-subprocess-module
                         subprocess.call([cmd], shell=True)
 
+                        #-- copy to GCS 
+                        gsTmpFolder = '_'.join(['gocc', 'update', date])
+                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
+                        cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
+                       
+                        gsPath_goods = os.path.join(gsDataPath, 'Goods.tsv')
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.goods_update_{} {} GID:string,PGID:string,GOODS_NAME:string,GOODS_KEYWORD:string,GOODS_BRAND:string,GOODS_DESCRIBE:string,GOODS_SPEC:string,GOODS_IMG_URL:string,AVAILABILITY:string,CURRENCY:string,SALE_PRICE:string,PROVIDER:string,BARCODE_EAN13:string,BARCODE_UPC:string,FIRST_RTS_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_goods)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
+
+                        sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, NULL as goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.goods_update_{}'.format(codename, codename, date)
+                        exportTmpTb = '{}_tmp.goods_update_{}_export'.format(codename, date)
+                        cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sqlBQ)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd, shell=True)
+
+                        jsonGoodsFN = "{}_goods_{}.json".format(codename, date)
+                        gsJsonGoodsPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder, jsonGoodsFN)
+                        cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(exportTmpTb, gsJsonGoodsPath)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd, shell=True)
+
+                        #-- local json path
+                        jsonPath = '/tmp/gocc2es_update'
+                        cmd = 'mkdir -p {}'.format(jsonPath)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
+
+                        #-- copy to local
+                        cmd = 'gsutil cp {} {}'.format(gsJsonGoodsPath, jsonPath)
+                        self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
+
+                        #-- clean tmp folder in GCS 
+                        cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
+                        self.logger.info(cmd)
+#                        subprocess.call(cmd.split(' '))
+
+                        cmd = 'rm -rf {}'.format(unpackPath) 
+                        subprocess.call(cmd.split(' '))
+                        self.logger.info(cmd)
 
     def check_file_encoding(self, dirPath) :
         for fname in os.listdir(dirPath):
