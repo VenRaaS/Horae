@@ -84,24 +84,24 @@ class ImportGOCC2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
                        
                         gsPath_goods = os.path.join(gsDataPath, 'Goods.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_{} {} GID:string,PGID:string,GOODS_NAME:string,GOODS_KEYWORD:string,GOODS_BRAND:string,GOODS_DESCRIBE:string,GOODS_SPEC:string,GOODS_IMG_URL:string,AVAILABILITY:string,CURRENCY:string,SALE_PRICE:string,PROVIDER:string,BARCODE_EAN13:string,BARCODE_UPC:string,FIRST_RTS_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_goods)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_unima.goods_{} {} GID:string,PGID:string,GOODS_NAME:string,GOODS_KEYWORD:string,GOODS_BRAND:string,GOODS_DESCRIBE:string,GOODS_SPEC:string,GOODS_IMG_URL:string,AVAILABILITY:string,CURRENCY:string,SALE_PRICE:string,PROVIDER:string,BARCODE_EAN13:string,BARCODE_UPC:string,FIRST_RTS_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_goods)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         gsPath_category = os.path.join(gsDataPath, 'Category.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_category_{} {} CATEGORY_NAME:string,CATEGORY_CODE:string,P_CATEGORY_CODE:string,LE:string,UPDATE_TIME:string'.format(codename, date, gsPath_category)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_unima.category_{} {} CATEGORY_NAME:string,CATEGORY_CODE:string,P_CATEGORY_CODE:string,LE:string,UPDATE_TIME:string'.format(codename, date, gsPath_category)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         gsPath_gcc = os.path.join(gsDataPath, 'GoodsCateCode.tsv')
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.unima_goods_cate_code_{} {} GID:string,CATEGORY_CODE:string,LE:string,SORT:string,FUNC_TYPE:string,INSERT_DATE:string,DISPLAY_START_DATE:string,DISPLAY_END_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_gcc)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_unima.goods_cate_code_{} {} GID:string,CATEGORY_CODE:string,LE:string,SORT:string,FUNC_TYPE:string,INSERT_DATE:string,DISPLAY_START_DATE:string,DISPLAY_END_DATE:string,UPDATE_TIME:string'.format(codename, date, gsPath_gcc)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         dt = datetime.datetime.strptime(date, '%Y%m%d')
                         yest_date = (dt.date() - datetime.timedelta(days=1)).strftime('%Y%m%d')
                         gsPath_order = os.path.join(gsDataPath, 'OrderList_{}.tsv'.format(yest_date))
-                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_tmp.OrderList_{} {} UID:string,ORDER_NO:string,SEQ:string,ORDER_DATE:DATETIME,GID:string,CURRENCY:string,SALE_PRICE:float,FINAL_PRICE:float,QTY:integer,FINAL_AMT:float,PROMO_ID:string,AFFILIATE_ID:string,DC_PRICE:float,DELIVERY_TYPE:string,UPDATE_TIME:DATETIME'.format(codename, yest_date, gsPath_order)
+                        cmd = 'bq load --source_format=CSV --F=''\t'' --replace --max_bad_records=10 {}_unima.orderlist_{} {} UID:string,ORDER_NO:string,SEQ:string,ORDER_DATE:DATETIME,GID:string,CURRENCY:string,SALE_PRICE:float,FINAL_PRICE:float,QTY:integer,FINAL_AMT:float,PROMO_ID:string,AFFILIATE_ID:string,DC_PRICE:float,DELIVERY_TYPE:string,UPDATE_TIME:DATETIME'.format(codename, yest_date, gsPath_order)
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
