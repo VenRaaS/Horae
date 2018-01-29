@@ -16,7 +16,7 @@ from event import EnumEvent, EnumTopic
 from subscr import EnumSubscript
 
 
-class Import2bq(Task.Task):
+class ImportGOCC2bq(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE.name ]
