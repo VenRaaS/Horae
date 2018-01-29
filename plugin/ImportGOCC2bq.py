@@ -33,8 +33,9 @@ class ImportGOCC2bq(Task.Task):
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
-                #-- valid root path
-                if objectId.split('/')[0] == 'gocc' or objectId.split('/')[0] == 'tmp':
+                #-- valid file path in GCS
+                gsPaths = objectId.split('/')
+                if 2 == len(gsPaths) and (gsPaths[0] == 'gocc' or gsPaths[0] == 'tmp'):
                     m = re.match(r'gocc_(\d{8})\.tar\.gz$', objectId[-20:]) 
 
                     #-- valid file name 
