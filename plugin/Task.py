@@ -20,7 +20,7 @@ class Task(threading.Thread) :
     INVOKE_INTERVAL_SEC = 30
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
-    PUB_TOPIC = EnumTopic.bigquery_unima
+    PUB_TOPIC = EnumTopic.bigquery
 
 
     def __init__(self, sub_msg) :

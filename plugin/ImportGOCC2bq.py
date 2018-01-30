@@ -20,7 +20,7 @@ class ImportGOCC2bq(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
-    PUB_TOPIC = EnumTopic.bigquery_unima
+    PUB_TOPIC = EnumTopic.bigquery
 
     def exe(self, hmsg) :
         if hmsg.get_attributes() :
