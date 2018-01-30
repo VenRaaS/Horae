@@ -15,7 +15,7 @@
     "attributes":{  
         "bucketId":"ven-cust-sohappy",
         "eventType":"OBJECT_FINALIZE",
-        "objectId":"tmp/sohappy_gocc_20171121.tar.gz",
+        "objectId":"tmp/sohappy_gocc_20170231.tar.gz",
 ...        
 ```
 
