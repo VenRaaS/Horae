@@ -4,14 +4,14 @@
 # see https://developers.google.com/api-client-library/
 ###
 
-from googleapiclient import discovery
-from oauth2client.client import GoogleCredentials
 import time
 import threading
 import logging
 import os
 import imp
 import sys
+from oauth2client.client import GoogleCredentials
+from googleapiclient import discovery
 
 #-- lib/ and plugin/ modules paths
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -24,6 +24,7 @@ from hmessage import HMessage
 from subscr import EnumSubscript
 from event import EnumEvent
 from tstatus import EnumState
+from pull_pub import pull_messages
 
 #-- logging setup
 formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
@@ -108,54 +109,9 @@ class sub_callback() :
                 logger.error(e, exc_info=True)
 
 
-def fqrn(resource_type, project, resource):
-    """Return a fully qualified resource name for Cloud Pub/Sub."""
-    return "projects/{}/{}/{}".format(project, resource_type, resource)
-
 def get_full_topic_name(project, topic):
     """Return a fully qualified topic name."""
     return fqrn('topics', project, topic)
-
-def get_full_subscription_name(project, subscription):
-    """Return a fully qualified subscription name."""
-    return fqrn('subscriptions', project, subscription)
-
-
-def pull_messages(client, proj_name, sub_name, callback_fun):
-    NUM_RETRIES = 3
-
-    subscription = get_full_subscription_name(PROJECT_NAME, sub_name)
-    
-    try:
-        logger.info("pull from %s ...", subscription)
-
-        body = {
-            'returnImmediately': False,
-            'maxMessages': 1
-        }
-        resp = client.projects().subscriptions().pull(
-                subscription=subscription, body=body).execute(
-                num_retries=NUM_RETRIES)
-
-        receivedMessages = resp.get('receivedMessages')
-        if receivedMessages:
-            ack_ids = []
-            for msg in receivedMessages:
-                ack_ids.append(msg.get('ackId'))
-                
-                message = msg.get('message')
-                if message:
-                    callback_fun(message)
-
-            ack_body = {'ackIds': ack_ids}
-            logger.info(ack_body)
-            client.projects().subscriptions().acknowledge(
-                    subscription=subscription, body=ack_body).execute(num_retries=NUM_RETRIES)
-    except Exception as e:
-        time.sleep(0.5)
-        print e
-    except KeyboardInterrupt:
-        print "shutdown requested, exiting... "
 
 
 if '__main__' == __name__ :
