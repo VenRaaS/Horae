@@ -10,6 +10,15 @@
 * es-cluster
 
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
+```
+"message":{  
+    "attributes":{  
+        "bucketId":"ven-cust-sohappy",
+        "eventType":"OBJECT_FINALIZE",
+        "objectId":"tmp/sohappy_gocc_20171121.tar.gz",
+...        
+```
+
 
 ## Reference
 * [Cloud Pub/Sub Client Libraries](https://cloud.google.com/pubsub/docs/reference/libraries#client-libraries-install-python)
