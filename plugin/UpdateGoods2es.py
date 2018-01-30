@@ -91,7 +91,7 @@ class UpdateGoods2es(Task.Task):
                         subprocess.call(cmd.split(' '))
 
                         sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, NULL as goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.goods_update_{}'.format(codename, codename, date)
-                        exportTmpTb = '{}_tmp.goods_update_{}_export'.format(codename, date)
+                        exportTmpTb = '{}_tmp.goods_update_export_{}'.format(codename, date)
                         cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sqlBQ)
                         self.logger.info(cmd)
                         subprocess.call(cmd, shell=True)
