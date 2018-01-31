@@ -24,7 +24,7 @@ from hmessage import HMessage
 from subscr import EnumSubscript
 from event import EnumEvent
 from tstatus import EnumState
-from pull_pub import pull_messages
+import pull_pub
 
 #-- logging setup
 formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
@@ -90,8 +90,8 @@ class sub_callback() :
                 if not hasattr(taskClass, 'isTask'): continue
                 
                 #-- math Subscription and eventType between message and plugin class (taskClass)
-                if not self.subscript       in taskClass.LISTEN_SUBSCRIPTS: continue
-                if not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
+                if not self.subscript in taskClass.LISTEN_SUBSCRIPTS: continue
+                if not eventType or not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
 
                 k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
                 logger.info('task instance key: %s', k)
@@ -115,13 +115,9 @@ def get_full_topic_name(project, topic):
 
 
 if '__main__' == __name__ :
-    #TODO wrap as a module
-    PUBSUB_SCOPES = ["https://www.googleapis.com/auth/pubsub"]
-    PROJECT_NAME = 'venraasitri'
-
     credentials = GoogleCredentials.get_application_default()
     if credentials.create_scoped_required():
-        credentials = credentials.create_scoped(PUBSUB_SCOPES)
+        credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
     client = discovery.build('pubsub', 'v1', credentials=credentials)
 
     
@@ -140,7 +136,7 @@ if '__main__' == __name__ :
                             logger.info('del %s', k)
 
             cb = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
-            pull_messages(client, PROJECT_NAME, EnumSubscript['pull_bucket_ven-custs'].name, cb.callback)
+            pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'].name, cb.callback)
 
             time.sleep(1)
                 

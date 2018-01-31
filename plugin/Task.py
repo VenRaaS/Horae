@@ -3,6 +3,8 @@ import os
 import sys
 import threading
 import time
+from oauth2client.client import GoogleCredentials
+from googleapiclient import discovery
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
@@ -10,7 +12,7 @@ if not lib_path in sys.path : sys.path.append(lib_path)
 from event import EnumEvent, EnumTopic
 from subscr import EnumSubscript
 from tstatus import TaskStatus 
-
+import pull_pub
 
 
 class Task(threading.Thread) :
@@ -50,9 +52,6 @@ class Task(threading.Thread) :
 
 #        if hasattr(msg, 'data'):
 #            self.logger.info(msg.data)
-
-    def pub(self) :
-        pass
     
     #-- thread entry point
     #   https://docs.python.org/2/library/threading.html#thread-objects
@@ -61,15 +60,34 @@ class Task(threading.Thread) :
             self.st.start()
             self.exe(self.sub_msg)
 
-            self.st.pub()
-            self.pub()
-
         except Exception as e:
             self.logger.error(e, exc_info=True)
 
         finally: 
             self.st.end()
             self.logger.info(self.st.state)
+    
+    ## A helper function to publish a message
+    ## usage:
+    ##      pubMsg = {'attributes': {'bucketId':'TT Bucket', 'objectId':'OBJ ID', 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
+    ##      self.pub_message(EnumTopic['bucket_ven-custs'], pubMsg)
+    def pub_message(self, topic_enum, msg):
+        try:
+            if not topic_enum in list(EnumTopic):
+                raise ValueError('the publish topic is not a EnumTopic')
+
+            if None == msg:
+                raise ValueError('input msg must not be empty')
+            
+            credentials = GoogleCredentials.get_application_default()
+            if credentials.create_scoped_required():
+                credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
+            client = discovery.build('pubsub', 'v1', credentials=credentials)
+ 
+            pull_pub.publish_message(client, topic_enum, msg)
+            
+        except Exception as e:
+            self.logger.error(e, exc_info=True)
 
 
 if '__main__' == __name__:
