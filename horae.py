@@ -27,6 +27,7 @@ from tstatus import EnumState
 import pull_pub
 
 #-- logging setup
+#   see https://docs.python.org/2/howto/logging.html#configuring-logging
 formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
 
 ch = logging.StreamHandler(sys.stdout)
