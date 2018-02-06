@@ -20,6 +20,11 @@ def remove_zero_datetime(ffn):
     logger.info(cmd)
     subprocess.call([cmd], shell=True)
 
+def replace_c_cs(ffn):
+    cmd = r"sed -r -i 's/([0-9]+),([0-9]+)/\1, \2/g' {}".format(ffn)
+    logger.info(cmd)
+    subprocess.call([cmd], shell=True)
+
 
 if __name__ == '__main__':
    print has_header(sys.argv[1])

@@ -131,9 +131,7 @@ class ImportGOCC2bq(Task.Task):
                             self.logger.info(cmd)
                             subprocess.call(cmd.split(' '))
 
-                        
- 
-                        #-- load into BQ tmp dataset
+                        #-- load into BQ unima dataset
                         for fn in dataFNs:
                             tmpDS = '{}_tmp'.format(codename)
                             baseName = os.path.splitext(fn)[0]
@@ -202,11 +200,16 @@ class ImportGOCC2bq(Task.Task):
     
     def dataCorrection(self, dirPath, dataFNs):
         for fn in dataFNs:
+            baseName = os.path.splitext(fn)[0]
             ffn = os.path.join(dirPath, fn)
 
             utility.remove_dq2space(ffn)
-
             utility.remove_zero_datetime(ffn)
+
+            if baseName.lower().endswith('goods'):
+                #-- prevent cast string to Float by BQ --autodetect
+                #   e.g. PGID: 5787509,5789667 => 5787509, 5789667
+                utility.replace_c_cs(ffn)
 
 
 if '__main__' == __name__:
