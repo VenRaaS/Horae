@@ -22,7 +22,7 @@
 
 ## Reference
 * [Google API Client Libraries](https://github.com/google/google-api-python-client)
-  * [Google Cloud Pub/Sub API](https://developers.google.com/api-client-library/)
+  * [Google API Client Libraries - Python](https://developers.google.com/api-client-library/python/)
   * [APIs Explorer - Google Cloud Pub/Sub API v1](https://developers.google.com/apis-explorer/#p/pubsub/v1/)
   * [cloud-pubsub-samples-python](https://github.com/GoogleCloudPlatform/cloud-pubsub-samples-python/blob/master/cmdline-pull/pubsub_sample.py)
 * [Cloud Pub/Sub Client Libraries](https://cloud.google.com/pubsub/docs/reference/libraries#client-libraries-install-python)
