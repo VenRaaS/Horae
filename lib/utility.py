@@ -25,6 +25,11 @@ def replace_c_cs(ffn):
     logger.info(cmd)
     subprocess.call([cmd], shell=True)
 
+def lowercase_firstLine(ffn):
+    cmd = r"sed -ri '1s/\w+/\L&/g' {}".format(ffn)
+    logger.info(cmd)
+    subprocess.call([cmd], shell=True)
+
 
 if __name__ == '__main__':
    print has_header(sys.argv[1])

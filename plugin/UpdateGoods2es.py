@@ -18,14 +18,14 @@ import utility
 
 
 class UpdateGoods2es(Task.Task):
-    INVOKE_INTERVAL_SEC = 600
+    INVOKE_INTERVAL_SEC = 300
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic.es_cluster
 
     HEADER_GOODS = 'GID	PGID	GOODS_NAME	GOODS_KEYWORD	GOODS_BRAND	GOODS_DESCRIBE	GOODS_SPEC	GOODS_IMG_URL	AVAILABILITY	CURRENCY	SALE_PRICE	PROVIDER	BARCODE_EAN13	BARCODE_UPC	FIRST_RTS_DATE	UPDATE_TIME'
 
-    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(GID AS string) AS GID, SAFE_CAST(PGID as string) AS PGID, SAFE_CAST(AVAILABILITY AS string) AS AVAILABILITY, SAFE_CAST(SALE_PRICE AS string) AS SALE_PRICE, SAFE_CAST(PROVIDER as string) AS PROVIDER, SAFE_CAST(FIRST_RTS_DATE AS DATETIME) AS FIRST_RTS_DATE, SAFE_CAST(UPDATE_TIME as DATETIME) AS UPDATE_TIME,  * EXCEPT (GID, PGID, AVAILABILITY, SALE_PRICE, PROVIDER, FIRST_RTS_DATE, UPDATE_TIME) FROM {}.{}'
+    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {}.{}'
 
 
     def exe(self, hmsg) :
@@ -71,7 +71,7 @@ class UpdateGoods2es(Task.Task):
                         self.logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
-                        dataPath = os.path.join(unpackPath, 'data')
+                        dataPath = os.path.join(unpackPath, 'update_data')
 
                         #-- data filenames 
                         dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) ]
@@ -136,8 +136,8 @@ class UpdateGoods2es(Task.Task):
                                 subprocess.call(cmd.split(' '))
                                 break
 
-#                        sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, NULL as goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.goods_update_{}'.format(codename, codename, date)
-                        sqlBQ = 'SELECT \'{}\' as code_name, SUBSTR(CAST(FIRST_RTS_DATE AS STRING),0,19) as FIRST_RTS_DATE, SUBSTR(CAST(UPDATE_TIME AS STRING),0,19) AS UPDATE_TIME,  * EXCEPT (FIRST_RTS_DATE, UPDATE_TIME) from {}_tmp.update_goods_{}'.format(codename, codename, date)
+#                        sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.update_goods_{}'.format(codename, codename, date)
+                        sqlBQ = 'SELECT \'{}\' as code_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {}_tmp.update_goods_{}'.format(codename, codename, date)
 
                         exportTmpTb = '{}_tmp.update_export_goods_{}'.format(codename, date)
                         cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sqlBQ)
@@ -157,18 +157,20 @@ class UpdateGoods2es(Task.Task):
                         subprocess.call(cmd.split(' '))
 
                         #-- copy to local
-                        cmd = 'gsutil cp {} {}'.format(gsJsonGoodsPath, jsonPath)
+                        #-- >, arrow to trigger file change detection of logstash
+                        jsonPath = os.path.join(jsonPath, jsonGoodsFN)
+                        cmd = 'gsutil cat {} > {}'.format(gsJsonGoodsPath, jsonPath)
                         self.logger.info(cmd)
-                        subprocess.call(cmd.split(' '))
+                        subprocess.call(cmd, shell=True)
 
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
                         self.logger.info(cmd)
-                        subprocess.call(cmd.split(' '))
+#                        subprocess.call(cmd.split(' '))
 
                         cmd = 'rm -rf {}'.format(unpackPath) 
-#                        subprocess.call(cmd.split(' '))
 #                        self.logger.info(cmd)
+#                        subprocess.call(cmd.split(' '))
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
@@ -208,6 +210,7 @@ class UpdateGoods2es(Task.Task):
 
             utility.remove_dq2space(ffn)
             utility.remove_zero_datetime(ffn)
+            utility.lowercase_firstLine(ffn)
 
             if baseName.lower().endswith('goods'):
                 #-- prevent cast string to Float by BQ --autodetect
