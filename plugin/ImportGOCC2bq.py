@@ -144,6 +144,7 @@ class ImportGOCC2bq(Task.Task):
                             if tmpTb.endswith('goods'):
                                 sql = ImportGOCC2bq.SQL2UNIMA_GOODS.format(tmpDS, tmpTb)
                             elif 'orderlist' in tmpTb:
+                                unimaTb = '{}'.format(baseName.lower())
                                 sql = ImportGOCC2bq.SQL2UNIMA_ORDERLIST.format(tmpDS, tmpTb)
                             elif tmpTb.endswith('category'):
                                 sql = ImportGOCC2bq.SQL2UNIMA_CATEGORY.format(tmpDS, tmpTb)
@@ -163,8 +164,8 @@ class ImportGOCC2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
 
                         cmd = 'rm -rf {}'.format(unpackPath) 
-                        subprocess.call(cmd.split(' '))
                         self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
 
 
     def check_file_encoding(self, dirPath, dataFNs):
