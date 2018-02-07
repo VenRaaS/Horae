@@ -169,11 +169,11 @@ class UpdateGoods2es(Task.Task):
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
                         self.logger.info(cmd)
-#                        subprocess.call(cmd.split(' '))
+                        subprocess.call(cmd.split(' '))
 
                         cmd = 'rm -rf {}'.format(unpackPath) 
-#                        self.logger.info(cmd)
-#                        subprocess.call(cmd.split(' '))
+                        self.logger.info(cmd)
+                        subprocess.call(cmd.split(' '))
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
