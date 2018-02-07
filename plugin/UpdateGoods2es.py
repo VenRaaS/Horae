@@ -74,7 +74,7 @@ class UpdateGoods2es(Task.Task):
                         dataPath = os.path.join(unpackPath, 'update_data')
 
                         #-- data filenames 
-                        dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) ]
+                        dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) if utility.basename(fn).lower().endswith('goods') ]
                         self.logger.info(dataFNs)
 
                         #-- check file format
