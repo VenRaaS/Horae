@@ -1,8 +1,14 @@
+import os
 import sys
 import csv
 import subprocess
 from logger import logger
 
+
+def basename(ffn):
+	fn = os.path.basename(ffn)
+	bn = os.path.splitext(fn)[0]
+	return bn
 
 def has_header(ffn):
     with open(ffn, 'rb') as f:
