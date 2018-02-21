@@ -1,6 +1,10 @@
 
 
 ## Overview
+In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to pass the message/status between modules.  
+The plugin client is able to trigger a task for data sync or modeling process.  
+Here is an overview of the Horae framework and how the interaction between message flow and data flow:
+
 ![](https://drive.google.com/uc?id=1qnS-pLb7ZfK__745vSx9J5bdidx6b8Tw)
 
 
