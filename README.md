@@ -4,7 +4,7 @@
 ![](https://drive.google.com/uc?id=1qnS-pLb7ZfK__745vSx9J5bdidx6b8Tw)
 
 
-## [Topics](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
+## [Topics](https://cloud.google.com/pubsub/docs/admin)
 * bucket_ven-custs
 * bigquery
 * es-cluster
