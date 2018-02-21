@@ -7,7 +7,7 @@ import re
 import sys
 import subprocess
 import datetime
-import Task
+import plugin.Task as Task
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))

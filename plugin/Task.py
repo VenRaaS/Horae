@@ -6,13 +6,13 @@ import time
 from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
 
-file_path = os.path.dirname(os.path.realpath(__file__))
-lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
-if not lib_path in sys.path : sys.path.append(lib_path)
-from event import EnumEvent, EnumTopic
-from subscr import EnumSubscript
-from tstatus import TaskStatus 
-import pull_pub
+#file_path = os.path.dirname(os.path.realpath(__file__))
+#lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
+#if not lib_path in sys.path : sys.path.append(lib_path)
+from lib.event import EnumEvent, EnumTopic
+from lib.subscr import EnumSubscript
+from lib.tstatus import TaskStatus 
+import lib.pull_pub
 
 
 class Task(threading.Thread) :

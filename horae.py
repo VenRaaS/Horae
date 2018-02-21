@@ -14,17 +14,17 @@ from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
 
 #-- lib/ and plugin/ modules paths
-file_path = os.path.dirname(os.path.realpath(__file__))
-plugin_path = os.path.join(file_path, 'plugin')
-lib_path = os.path.join(file_path, 'lib')
-if not plugin_path in sys.path: sys.path.append(plugin_path)
-if not lib_path in sys.path: sys.path.append(lib_path)
-import Task
-from hmessage import HMessage
-from subscr import EnumSubscript
-from event import EnumEvent
-from tstatus import EnumState
-import pull_pub
+#file_path = os.path.dirname(os.path.realpath(__file__))
+#plugin_path = os.path.join(file_path, 'plugin')
+#lib_path = os.path.join(file_path, 'lib')
+#if not plugin_path in sys.path: sys.path.append(plugin_path)
+#if not lib_path in sys.path: sys.path.append(lib_path)
+from lib.hmessage import HMessage
+from lib.subscr import EnumSubscript
+from lib.event import EnumEvent
+from lib.tstatus import EnumState
+import lib.pull_pub as pull_pub
+import plugin.Task
 
 #-- logging setup
 #   see https://docs.python.org/2/howto/logging.html#configuring-logging
