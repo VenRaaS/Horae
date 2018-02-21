@@ -15,14 +15,13 @@ import plugin.Task as Task
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
-import lib.utility
+import lib.utility as utility
 
 
 class UpdateGoods2es(Task.Task):
-    INVOKE_INTERVAL_SEC = 300
+    INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
-    PUB_TOPIC = EnumTopic.es_cluster
 
     HEADER_GOODS = 'GID	PGID	GOODS_NAME	GOODS_KEYWORD	GOODS_BRAND	GOODS_DESCRIBE	GOODS_SPEC	GOODS_IMG_URL	AVAILABILITY	CURRENCY	SALE_PRICE	PROVIDER	BARCODE_EAN13	BARCODE_UPC	FIRST_RTS_DATE	UPDATE_TIME'
 
