@@ -7,7 +7,4 @@ class EnumEvent(Enum) :
     OBJECT_FINALIZE = 1
     OBJECT_DELETE = 2
 
-#-- seprate by a SPACE
-EnumTopic = Enum('EnumTopic', 'bucket_ven-custs bigquery es_cluster')
-
 
