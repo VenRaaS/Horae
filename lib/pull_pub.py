@@ -19,9 +19,12 @@ def get_full_topic_name(project, topic):
     """Return a fully qualified topic name."""
     return fqrn('topics', project, topic)
 
-def pull_messages(client, sub_name, callback_fun):
+def get_projectID():
     r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
-    proj_name = r.text
+    return r.text
+
+def pull_messages(client, sub_name, callback_fun):
+    proj_name = get_projectID()
 
     subscription = get_full_subscription_name(proj_name, sub_name)
     
@@ -60,8 +63,7 @@ def pull_messages(client, sub_name, callback_fun):
 def publish_message(client, topic_enum, msg):
     ##-- Publish a message to a given topic.
     try:
-        r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
-        proj_name = r.text
+        proj_name = get_projectID()
 
         topic = get_full_topic_name(proj_name, topic_enum.name)
 
