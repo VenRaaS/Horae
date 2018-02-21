@@ -15,7 +15,7 @@ import plugin.Task as Task
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
-import lib.utility
+import lib.utility as utility
 
 
 class ImportGOCC2bq(Task.Task):
@@ -90,6 +90,7 @@ class ImportGOCC2bq(Task.Task):
 
                         #-- data correction
                         self.dataCorrection(dataPath, dataFNs)
+                        
 
                         #-- insert Header 
                         for fn in dataFNs :
@@ -155,9 +156,14 @@ class ImportGOCC2bq(Task.Task):
                                 unimaTb = '{}'.format(baseName.lower())
                                 sql = ImportGOCC2bq.SQL2UNIMA_CUSTOMER.format(tmpDS, tmpTb)
 
-                            cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={}.{} {}'.format(unimaDS, unimaTb, sql)
+                            destTb = '{}.{}'.format(unimaDS, unimaTb)
+                            cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={} {}'.format(destTb, sql)
                             self.logger.info(cmd)
                             subprocess.call(cmd.split(' '))
+                        
+                            #-- publish data uploaded message  
+                            pubMsg = {'attributes': {'codename':codename, 'objectId':destTb, 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
+                            self.pub_message(EnumTopic['bigquery'], pubMsg)
 
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)

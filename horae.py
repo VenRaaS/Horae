@@ -13,12 +13,6 @@ import sys
 from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
 
-#-- lib/ and plugin/ modules paths
-#file_path = os.path.dirname(os.path.realpath(__file__))
-#plugin_path = os.path.join(file_path, 'plugin')
-#lib_path = os.path.join(file_path, 'lib')
-#if not plugin_path in sys.path: sys.path.append(plugin_path)
-#if not lib_path in sys.path: sys.path.append(lib_path)
 from lib.hmessage import HMessage
 from lib.subscr import EnumSubscript
 from lib.event import EnumEvent
@@ -71,7 +65,7 @@ def load_plugin_modules() :
             except Exception as e:
                 logger.error(e, exc_info=True)
 
-g_taskInstDict_lock = threading.RLock() 
+g_taskInstDict_lock = threading.RLock()
 g_taskInstDict = {}
 class sub_callback() : 
     def __init__(self, subscript) :
@@ -110,11 +104,6 @@ class sub_callback() :
                 logger.error(e, exc_info=True)
 
 
-def get_full_topic_name(project, topic):
-    """Return a fully qualified topic name."""
-    return fqrn('topics', project, topic)
-
-
 if '__main__' == __name__ :
     credentials = GoogleCredentials.get_application_default()
     if credentials.create_scoped_required():
@@ -138,12 +127,13 @@ if '__main__' == __name__ :
 
             cb = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
             pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'].name, cb.callback)
+            pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'].name, cb.callback)
 
             time.sleep(1)
                 
     except KeyboardInterrupt:
-        print "shutdown requested, exiting... "
+        logger.info('shutdown requested, exiting... ')
 
-    print 'end.'
+    logger.info('end.')
 
 
