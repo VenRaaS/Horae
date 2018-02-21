@@ -9,7 +9,8 @@ from googleapiclient import discovery
 #file_path = os.path.dirname(os.path.realpath(__file__))
 #lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
 #if not lib_path in sys.path : sys.path.append(lib_path)
-from lib.event import EnumEvent, EnumTopic
+from lib.event import EnumEvent
+from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
 from lib.tstatus import TaskStatus 
 import lib.pull_pub

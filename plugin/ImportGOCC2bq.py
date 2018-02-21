@@ -12,9 +12,10 @@ import plugin.Task as Task
 #file_path = os.path.dirname(os.path.realpath(__file__))
 #lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
 #if not lib_path in sys.path : sys.path.append(lib_path)
-from event import EnumEvent, EnumTopic
-from subscr import EnumSubscript
-import utility
+from lib.event import EnumEvent
+from lib.topic import EnumTopic
+from lib.subscr import EnumSubscript
+import lib.utility
 
 
 class ImportGOCC2bq(Task.Task):
