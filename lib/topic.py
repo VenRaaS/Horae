@@ -5,4 +5,4 @@ from enum import Enum
 #   see https://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python?page=1&tab=votes#tab-top
 
 #-- each Topic is seprated by a SPACE
-EnumTopic = Enum('EnumTopic', 'bucket_ven-custs bigquery es_cluster')
+EnumTopic = Enum('EnumTopic', 'bucket_ven-custs bigquery es-cluster')
