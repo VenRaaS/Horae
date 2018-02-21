@@ -13,7 +13,7 @@ from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
 from lib.tstatus import TaskStatus 
-import lib.pull_pub
+import lib.pull_pub as pull_pub
 
 
 class Task(threading.Thread) :
@@ -21,7 +21,7 @@ class Task(threading.Thread) :
 
     #-- configuration
     INVOKE_INTERVAL_SEC = 30
-    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
+    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'], EnumSubscript['pull_bigquery'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
     PUB_TOPIC = EnumTopic.bigquery
 
@@ -70,7 +70,7 @@ class Task(threading.Thread) :
     
     ## A helper function to publish a message
     ## usage:
-    ##      pubMsg = {'attributes': {'bucketId':'TT Bucket', 'objectId':'OBJ ID', 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
+    ##      pubMsg = {'attributes': {'codename':'sohappy', 'bucketId':'TT Bucket', 'objectId':'OBJ ID', 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
     ##      self.pub_message(EnumTopic['bucket_ven-custs'], pubMsg)
     def pub_message(self, topic_enum, msg):
         try:
