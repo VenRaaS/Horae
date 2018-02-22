@@ -17,25 +17,10 @@ from lib.hmessage import HMessage
 from lib.subscr import EnumSubscript
 from lib.event import EnumEvent
 from lib.tstatus import EnumState
+from lib.topic import EnumTopic
 import lib.pull_pub as pull_pub
 import plugin.Task
 
-#-- logging setup
-#   see https://docs.python.org/2/howto/logging.html#configuring-logging
-formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
-
-ch = logging.StreamHandler(sys.stdout)
-ch.setLevel(logging.DEBUG)
-ch.setFormatter(formatter)
-
-#fh = logging.FileHandler("{0}.log".format(__name__))
-#fh.setLevel(logging.DEBUG)
-#fh.setFormatter(formatter)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(ch)
-#logger.addHandler(fh)
  
 
 g_pluginMods = {}
@@ -105,12 +90,35 @@ class sub_callback() :
 
 
 if '__main__' == __name__ :
+    #-- logging setup
+    formatter = '[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s'
+    datefmt = '%Y-%m-%d %H:%M:%S'
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=formatter, datefmt=datefmt)
+    logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
+
+
+    #   see https://docs.python.org/2/howto/logging.html#configuring-logging
+#    formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+
+#    ch = logging.StreamHandler(sys.stdout)
+#    ch.setLevel(logging.DEBUG)
+#    ch.setFormatter(formatter)
+
+#    fh = logging.FileHandler("{0}.log".format(__name__))
+#    fh.setLevel(logging.DEBUG)
+#    fh.setFormatter(formatter)
+
+    logger = logging.getLogger(__name__)
+#    logger.setLevel(logging.DEBUG)
+#    logger.addHandler(ch)
+#    logger.addHandler(fh)
+
+
     credentials = GoogleCredentials.get_application_default()
     if credentials.create_scoped_required():
         credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
     client = discovery.build('pubsub', 'v1', credentials=credentials)
 
-    
     #-- The subscriber is non-blocking, so we must keep the main thread alive
     #   and process messages in the background.
     try:
