@@ -43,7 +43,7 @@ def pull_messages(client, sub_name, callback_fun):
                 num_retries=NUM_RETRIES)
 
         receivedMessages = resp.get('receivedMessages')
-        logger.info(receivedMessages)
+#        logger.info(receivedMessages)
         if receivedMessages:
             ack_ids = []
             for msg in receivedMessages:
