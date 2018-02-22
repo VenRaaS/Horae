@@ -170,9 +170,9 @@ class ImportGOCC2bq(Task.Task):
                         hmsg = HMessage()
                         hmsg.set_codename(codename)
                         hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
-                        hmsg.hmsg.set_objectIds(msgObjs)
-                        logger.info(msgs)
-                        self.pub_message(EnumTopic['bigquery'], [hmsg])
+                        hmsg.set_objectIds(msgObjs)
+                        logger.info(hmsg)
+                        self.pub_message(self.PUB_TOPIC, [hmsg])
 
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
