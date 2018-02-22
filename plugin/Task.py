@@ -72,12 +72,12 @@ class Task(threading.Thread) :
     ## usage:
     ##      pubMsg = {'attributes': {'codename':'sohappy', 'bucketId':'TT Bucket', 'objectId':'OBJ ID', 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
     ##      self.pub_message(EnumTopic['bucket_ven-custs'], pubMsg)
-    def pub_message(self, topic_enum, msg):
+    def pub_message(self, topic_enum, hmsgs):
         try:
             if not topic_enum in list(EnumTopic):
                 raise ValueError('the publish topic is not a EnumTopic')
 
-            if None == msg:
+            if None == hmsgs:
                 raise ValueError('input msg must not be empty')
             
             credentials = GoogleCredentials.get_application_default()
@@ -85,7 +85,7 @@ class Task(threading.Thread) :
                 credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
             client = discovery.build('pubsub', 'v1', credentials=credentials)
  
-            pull_pub.publish_message(client, topic_enum, msg)
+            pull_pub.publish_message(client, topic_enum, hmsgs)
             
         except Exception as e:
             self.logger.error(e, exc_info=True)
