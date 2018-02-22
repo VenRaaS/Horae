@@ -1,7 +1,10 @@
 import time
 import base64
 import requests
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 PUBSUB_SCOPES = ["https://www.googleapis.com/auth/pubsub"]
 NUM_RETRIES = 3
@@ -29,7 +32,7 @@ def pull_messages(client, sub_name, callback_fun):
     subscription = get_full_subscription_name(proj_name, sub_name)
     
     try:
-        print "pull from {} ...".format(subscription)
+        logger.info("pull from {} ...".format(subscription))
 
         body = {
             'returnImmediately': False,
@@ -40,6 +43,7 @@ def pull_messages(client, sub_name, callback_fun):
                 num_retries=NUM_RETRIES)
 
         receivedMessages = resp.get('receivedMessages')
+        logger.info(receivedMessages)
         if receivedMessages:
             ack_ids = []
             for msg in receivedMessages:
@@ -50,36 +54,41 @@ def pull_messages(client, sub_name, callback_fun):
                     callback_fun(message)
 
             ack_body = {'ackIds': ack_ids}
-            print ack_body
+            logger.info(ack_body)
             client.projects().subscriptions().acknowledge(
                     subscription=subscription, body=ack_body).execute(num_retries=NUM_RETRIES)
     except Exception as e:
         time.sleep(0.5)
-        print e
+        logger.error(e, exc_info=True)
     except KeyboardInterrupt:
-        print "shutdown requested, exiting... "
+        logger.info("shutdown requested, exiting... ")
 
 
-def publish_message(client, topic_enum, msg):
+def publish_message(client, topic_enum, rawMsgs):
     ##-- Publish a message to a given topic.
     try:
         proj_name = get_projectID()
 
         topic = get_full_topic_name(proj_name, topic_enum.name)
 
-        attributes = msg.get('attributes')
-        data = base64.b64encode( str(msg.get('data')) )
-        body = {'messages': [
-                    {
-                        'attributes': attributes, 
-                        'data': data
-                    }
-                ]}
+        #-- concate message list
+        #   note that the client.projects().subscriptions().pull(...) gets message seperately, e.g. len(receivedMessages) = 1, even if 1 < len(rawMsgs)
+        pubMsgs = []
+        for msg in rawMsgs:
+            attributes = msg.get('attributes')
+            data = base64.b64encode( str(msg.get('data')) ) if 'data' in msg else ''
+            pubMsgs.append(
+                {
+                    'attributes': attributes, 
+                    'data': data
+                }
+            )
+        
+        body = {'messages': pubMsgs}
 
         resp = client.projects().topics().publish(
             topic=topic, body=body).execute(num_retries=NUM_RETRIES)
 
-        print ('Published a message "{}" to a topic {}. The message_id was {}.'
-               .format(msg['attributes'], topic, resp.get('messageIds')[0]))
+        logger.info('Published a message "{}" to a topic {}. The message_id was {}.'.format(body, topic, resp.get('messageIds')[0]))
     except Exception as e:
-        print e
+        logger.error(e, exc_info=True)
