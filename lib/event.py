@@ -4,7 +4,8 @@ from enum import Enum
 #   see https://bitbucket.org/stoneleaf/aenum
 #   see https://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python?page=1&tab=votes#tab-top
 class EnumEvent(Enum) :
-    OBJECT_FINALIZE = 1
-    OBJECT_DELETE = 2
+    DEFAULT = 1
+    OBJECT_FINALIZE = 2
+    OBJECT_DELETE = 3
 
 

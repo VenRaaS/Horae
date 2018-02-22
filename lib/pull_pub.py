@@ -64,19 +64,21 @@ def pull_messages(client, sub_name, callback_fun):
         logger.info("shutdown requested, exiting... ")
 
 
-def publish_message(client, topic_enum, rawMsgs):
-    ##-- Publish a message to a given topic.
+##
+## Publish a message to a given topic.
+##
+def publish_message(client, topic_enum, hmsgs):
     try:
         proj_name = get_projectID()
 
         topic = get_full_topic_name(proj_name, topic_enum.name)
 
         #-- concate message list
-        #   note that the client.projects().subscriptions().pull(...) gets message seperately, e.g. len(receivedMessages) = 1, even if 1 < len(rawMsgs)
+        #   note that the client.projects().subscriptions().pull(...) gets message seperately, e.g. len(receivedMessages) = 1, even if 1 < len(hmsgs)
         pubMsgs = []
-        for msg in rawMsgs:
-            attributes = msg.get('attributes')
-            data = base64.b64encode( str(msg.get('data')) ) if 'data' in msg else ''
+        for m in hmsgs:
+            attributes = m.get_attributes()
+            data = base64.b64encode( str(m.get_data()) ) if m.get_data() else ''
             pubMsgs.append(
                 {
                     'attributes': attributes, 
@@ -86,8 +88,7 @@ def publish_message(client, topic_enum, rawMsgs):
         
         body = {'messages': pubMsgs}
 
-        resp = client.projects().topics().publish(
-            topic=topic, body=body).execute(num_retries=NUM_RETRIES)
+        resp = client.projects().topics().publish(topic=topic, body=body).execute(num_retries=NUM_RETRIES)
 
         logger.info('Published a message "{}" to a topic {}. The message_id was {}.'.format(body, topic, resp.get('messageIds')[0]))
     except Exception as e:
