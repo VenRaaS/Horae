@@ -7,15 +7,17 @@ import re
 import sys
 import subprocess
 import datetime
-import plugin.Task as Task
+import logging
 
-#file_path = os.path.dirname(os.path.realpath(__file__))
-#lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
-#if not lib_path in sys.path : sys.path.append(lib_path)
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
+from lib.hmessage import HMessage
 import lib.utility as utility
+import plugin.Task as Task
+
+
+logger = logging.getLogger(__name__)
 
 
 class ImportGOCC2bq(Task.Task):
@@ -46,7 +48,7 @@ class ImportGOCC2bq(Task.Task):
                 bucketId = attributes['bucketId'] if 'bucketId' in attributes else ''
                 objectId = attributes['objectId'] if 'objectId' in attributes else ''
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
-                self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
+                logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
                 #-- valid file path in GCS
                 gsPaths = objectId.split('/')
@@ -62,27 +64,27 @@ class ImportGOCC2bq(Task.Task):
                         unpackPath = os.path.join('/tmp', folder)
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         subprocess.call(cmd.split(' '))
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         
                         cmd = 'mkdir -p {}'.format(unpackPath)
                         subprocess.call(cmd.split(' '))
-                        self.logger.info(cmd)
+                        logger.info(cmd)
 
                         bkName = 'gs://' + os.path.join(bucketId, objectId)
                         cmd = 'gsutil cp {} {}'.format(bkName, unpackPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
                         tarPath = os.path.join(unpackPath, objectId.split('/')[-1])
                         cmd = 'tar -xvf {} -C {}'.format(tarPath, unpackPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
                         dataPath = os.path.join(unpackPath, 'data')
 
                         #-- data filenames 
                         dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) ]
-                        self.logger.info(dataFNs)
+                        logger.info(dataFNs)
 
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
@@ -95,7 +97,7 @@ class ImportGOCC2bq(Task.Task):
                         #-- insert Header 
                         for fn in dataFNs :
                             ffn = os.path.join(dataPath, fn)
-                            self.logger.info('%s has_header: %s', ffn, utility.has_header(ffn))
+                            logger.info('%s has_header: %s', ffn, utility.has_header(ffn))
 
                             if not utility.has_header(ffn):
                                 cmd = "sed -i '1s/^/{}\\n/' {}"
@@ -110,7 +112,7 @@ class ImportGOCC2bq(Task.Task):
                                 elif ffn.endswith('GoodsCateCode.tsv'):
                                     cmd = cmd.format(ImportGOCC2bq.HEADER_GOODSCATECODE, ffn)
 
-                                self.logger.info(cmd)
+                                logger.info(cmd)
                                 subprocess.call([cmd], shell=True)
                        
                         #-- copy to GCS
@@ -118,7 +120,7 @@ class ImportGOCC2bq(Task.Task):
                         gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
                         dataFiles = os.path.join(dataPath, '*')
                         cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         #-- load into BQ tmp dataset
@@ -130,15 +132,16 @@ class ImportGOCC2bq(Task.Task):
                             dataset = '{}_tmp'.format(codename)
 
                             cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
-                            self.logger.info(cmd)
+                            logger.info(cmd)
                             subprocess.call(cmd.split(' '))
 
+                        msgObjs = []
                         #-- load into BQ unima dataset
                         for fn in dataFNs:
                             tmpDS = '{}_tmp'.format(codename)
                             baseName = os.path.splitext(fn)[0]
                             tmpTb = 'ext_{}'.format(baseName.lower())
-                            self.logger.info(tmpTb)
+                            logger.info(tmpTb)
 
                             unimaDS = '{}_unima'.format(codename)
                             unimaTb = '{}_{}'.format(baseName.lower(), date)
@@ -158,20 +161,26 @@ class ImportGOCC2bq(Task.Task):
 
                             destTb = '{}.{}'.format(unimaDS, unimaTb)
                             cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={} {}'.format(destTb, sql)
-                            self.logger.info(cmd)
+                            logger.info(cmd)
                             subprocess.call(cmd.split(' '))
-                        
-                            #-- publish data uploaded message  
-                            pubMsg = {'attributes': {'codename':codename, 'objectId':destTb, 'eventType':EnumEvent.OBJECT_FINALIZE.name} }
-                            self.pub_message(EnumTopic['bigquery'], pubMsg)
+                            
+                            msgObjs.append(destTb)
+                       
+                        #-- publish message of uploaded data
+                        hmsg = HMessage()
+                        hmsg.set_codename(codename)
+                        hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
+                        hmsg.hmsg.set_objectIds(msgObjs)
+                        logger.info(msgs)
+                        self.pub_message(EnumTopic['bigquery'], [hmsg])
 
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         cmd = 'rm -rf {}'.format(unpackPath) 
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
 
@@ -184,7 +193,7 @@ class ImportGOCC2bq(Task.Task):
                     with io.open(fpath, 'r', encoding='utf-8') as f :
                         f.readlines()
                 except UnicodeDecodeError:
-                    self.logger.error(traceback.format_exc())
+                    logger.error(traceback.format_exc())
                     return False
         return True
 
@@ -202,7 +211,7 @@ class ImportGOCC2bq(Task.Task):
                             num_fields_1st_row = len(fields)
                         else :
                              if len(fields) != num_fields_1st_row :
-                                self.logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
+                                logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
                                 return False
         return True
     
@@ -225,7 +234,6 @@ if '__main__' == __name__:
         def __init__(self):
            self.message = {'ImportGOCC2bq':{'eventType':'OBJECT_FINALIZE', 'objectId':'fake message'}}
     
-    from hmessage import HMessage
     hmsg = HMessage(MockMsg().message)  
     t = ImportGOCC2bq(hmsg)
     t.start()
