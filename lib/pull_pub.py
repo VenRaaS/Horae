@@ -26,10 +26,10 @@ def get_projectID():
     r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
     return r.text
 
-def pull_messages(client, sub_name, callback_fun):
+def pull_messages(client, sub_enum, callback_fn):
     proj_name = get_projectID()
 
-    subscription = get_full_subscription_name(proj_name, sub_name)
+    subscription = get_full_subscription_name(proj_name, sub_enum.name)
     
     try:
         logger.info("pull from {} ...".format(subscription))
@@ -51,15 +51,15 @@ def pull_messages(client, sub_name, callback_fun):
                 
                 message = msg.get('message')
                 if message:
-                    callback_fun(message)
+                    callback_fn(message)
 
             ack_body = {'ackIds': ack_ids}
             logger.info(ack_body)
             client.projects().subscriptions().acknowledge(
                     subscription=subscription, body=ack_body).execute(num_retries=NUM_RETRIES)
     except Exception as e:
-        time.sleep(0.5)
         logger.error(e, exc_info=True)
+        time.sleep(0.5)
     except KeyboardInterrupt:
         logger.info("shutdown requested, exiting... ")
 

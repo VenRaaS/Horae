@@ -38,7 +38,10 @@ def load_plugin_modules() :
 
         py_mod = None
         if ext.lower() == '.py': 
-            try: 
+            try:
+                if '__init__' == mod_name:
+                    continue
+
                 if mod_name in g_pluginMods:
                     py_mod = imp.reload( g_pluginMods[mod_name] )
                 else:
@@ -133,9 +136,10 @@ if '__main__' == __name__ :
                             del g_taskInstDict[k]
                             logger.info('del %s', k)
 
-            cb = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
-            pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'].name, cb.callback)
-            pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'].name, cb.callback)
+            cb_bk = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
+            cb_bq = sub_callback(EnumSubscript['pull_bigquery'])
+            pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'], cb_bk.callback)
+            pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'], cb_bq.callback)
 
             time.sleep(1)
                 
