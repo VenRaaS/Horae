@@ -2,7 +2,11 @@ import os
 import sys
 import csv
 import subprocess
-from logger import logger
+import json
+import time
+import logging
+
+logger = logging.getLogger(__file__)
 
 
 def basename(ffn):
@@ -36,6 +40,22 @@ def lowercase_firstLine(ffn):
     logger.info(cmd)
     subprocess.call([cmd], shell=True)
 
+def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
+    r = requests.get(url)
+    cnt1 = json.loads(r.text)['count']
+    while True:
+        time.sleep(chk_interval_sec)
+
+        r = requests.get(url)
+        cnt2 = json.loads(r.text)['count']
+        d = cnt2 - cnt1
+        if 0 == d:
+            logger.info('return due to count is stable of {}'.format(url))
+            break;
+        
+        logger.info('continue, diff of count {} - {} = {}'.format(cnt2, cnt1, d)) 
+        cnt1 = cnt2
+  
 
 if __name__ == '__main__':
    print has_header(sys.argv[1])
