@@ -3,6 +3,8 @@ import base64
 import requests
 import logging
 
+from lib.hmessage import HMessage
+from lib.event import EnumEvent
 
 logger = logging.getLogger(__name__)
 
@@ -93,3 +95,13 @@ def publish_message(client, topic_enum, hmsgs):
         logger.info('Published a message "{}" to a topic {}. The message_id was {}.'.format(body, topic, resp.get('messageIds')[0]))
     except Exception as e:
         logger.error(e, exc_info=True)
+
+ 
+if '__main__' == __name__ :
+    msgObjs = ['gohappy_unima.category_20180305', 'gohappy_unima.goods_20180305', 'gohappy_unima.goodscatecode_20180305']
+    hmsg = HMessage()
+    hmsg.set_codename('gohappy')
+    hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
+    hmsg.set_objectIds(msgObjs)
+    logger.info(hmsg)
+    pull_pub.publish_message(client, EnumTopic.bigquery, [hmsg])
