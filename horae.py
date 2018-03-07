@@ -10,6 +10,7 @@ import logging
 import os
 import imp
 import sys
+from logging.handlers import RotatingFileHandler
 from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
 
@@ -93,30 +94,23 @@ class sub_callback() :
 
 
 if '__main__' == __name__ :
+    pwd_dir = os.path.dirname(os.path.realpath(__file__))
+    log_dir = os.path.join(pwd_dir, 'log')
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
     #-- logging setup
-    formatter = '[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s'
-    datefmt = '%Y-%m-%d %H:%M:%S'
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=formatter, datefmt=datefmt)
-    logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
-
-
     #   see https://docs.python.org/2/howto/logging.html#configuring-logging
-#    formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
-
-#    ch = logging.StreamHandler(sys.stdout)
-#    ch.setLevel(logging.DEBUG)
-#    ch.setFormatter(formatter)
-
-#    fh = logging.FileHandler("{0}.log".format(__name__))
-#    fh.setLevel(logging.DEBUG)
-#    fh.setFormatter(formatter)
+    fmt = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s): %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
+    log_path = os.path.join(log_dir, 'horae.log')
+    fh = RotatingFileHandler(log_path, maxBytes=2000, backupCount=10)
+    fh.setFormatter(fmt)
 
     logger = logging.getLogger(__name__)
-#    logger.setLevel(logging.DEBUG)
-#    logger.addHandler(ch)
-#    logger.addHandler(fh)
+    logger.addHandler(fh)
+    logger.setLevel(logging.DEBUG)
 
-
+    #-- google API client
     credentials = GoogleCredentials.get_application_default()
     if credentials.create_scoped_required():
         credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
