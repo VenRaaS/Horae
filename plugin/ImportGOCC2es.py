@@ -24,9 +24,9 @@ class ImportGOCC2es(Task.Task):
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bigquery'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 
-    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, goods_page_url,availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time  FROM {}'
+    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {}'
     
-    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, category_code, p_category_code, category_name, le, SUBSTR(CAST(update_time AS STRING),0,19) as update_time  FROM {}'
+    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
 
 
     def exe(self, hmsg) :
@@ -43,6 +43,7 @@ class ImportGOCC2es(Task.Task):
 
                 folder = 'gocc2es'
                 unpackPath = os.path.join('/tmp', folder)
+                #-- clean tmp local folder
                 cmd = 'rm -rf {}'.format(unpackPath)
                 subprocess.call(cmd.split(' '))
                 logger.info(cmd)
@@ -53,16 +54,33 @@ class ImportGOCC2es(Task.Task):
 
                 bucketId = 'ven-cust-{}'.format(codename)
                 gsDataPath = os.path.join('gs://', bucketId, 'tmp', 'gocc2es')
+                #-- clean tmp folder in GCS 
+                cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
+                logger.info(cmd)
+                subprocess.call(cmd.split(' '))
 
                 for t in objectIds:
                     srcDS, srcTb = t.split('.')
-                    if not srcTb.startswith('goods') and not srcTb.startswith('category'):
+
+                    sql = ''
+                    if srcTb.startswith('goods_'):
+                        sql = ImportGOCC2es.SQL_EXPORT_UNIMA_GOODS.format(codename, t)
+                    elif srcTb.startswith('category_'):
+                        sql = ImportGOCC2es.SQL_EXPORT_UNIMA_CATEGORY.format(codename, t)
+                    else:
                         continue
+
+                    expoDS = '{}_tmp'.format(codename)
+                    expoTb = 'gocc2es_{}'.format(srcTb)
+                    expoDSTb = '{}.{}'.format(expoDS, expoTb)
+                    cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={} {}'.format(expoDSTb, sql)
+                    logger.info(cmd)
+                    subprocess.call(cmd.split(' '))
 
                     #-- export to GCS
                     srcFN = srcTb
                     gsJsonPath = os.path.join(gsDataPath, srcFN)
-                    cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(t, gsJsonPath)
+                    cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(expoDSTb, gsJsonPath)
                     logger.info(cmd)
                     subprocess.call(cmd, shell=True)
 
@@ -90,14 +108,6 @@ class ImportGOCC2es(Task.Task):
 ###                    logger.info(cmd)
 ###                    subprocess.call(cmd, shell=True)
 ###
-                    #-- clean tmp folder in GCS 
-                    cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
-                    logger.info(cmd)
-                    subprocess.call(cmd.split(' '))
-
-#                    cmd = 'rm -rf {}'.format(unpackPath) 
-#                    logger.info(cmd)
-#                    subprocess.call(cmd.split(' '))
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
