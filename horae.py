@@ -103,7 +103,7 @@ if '__main__' == __name__ :
     #   see https://docs.python.org/2/howto/logging.html#configuring-logging
     fmt = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s): %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
     log_path = os.path.join(log_dir, 'horae.log')
-    fh = RotatingFileHandler(log_path, maxBytes=2000, backupCount=10)
+    fh = RotatingFileHandler(log_path, maxBytes=20*1024*1024 , backupCount=10)
     fh.setFormatter(fmt)
 
     logger = logging.getLogger(__name__)
