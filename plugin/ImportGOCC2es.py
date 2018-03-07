@@ -1,5 +1,4 @@
 import csv
-import logging
 import io
 import json
 import os
@@ -8,6 +7,8 @@ import sys
 import subprocess
 import datetime
 import logging
+
+import requests
 
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
@@ -27,6 +28,8 @@ class ImportGOCC2es(Task.Task):
     SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {}'
     
     SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
+
+    URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc/_count'
 
 
     def exe(self, hmsg) :
@@ -100,7 +103,11 @@ class ImportGOCC2es(Task.Task):
                                 o = json.loads(line)
                                 o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
                                 fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
-
+                 
+                url = URL_ES_GOCC_COUNT.format(codename)
+                utility.returnOnlyIfCountStable_es(url, 5)
+#TODO publish a message 
+ 
 ###                    #-- copy to local
 ###                    #-- >, arrow to trigger file change detection of logstash
 ###                    jsonPath = os.path.join(jsonPath, jsonGoodsFN)
