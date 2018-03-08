@@ -45,7 +45,14 @@ def lowercase_firstLine(ffn):
     subprocess.call([cmd], shell=True)
 
 def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
+    logger.info('GET {}'.format(url))
     r = requests.get(url)
+    logger.info(r.text)
+
+    if 400 <= getattr(r, 'status_code'):
+        logger.error('unexpected response on {}'.format(url))
+        return
+
     cnt1 = json.loads(r.text)['count']
     while True:
         time.sleep(chk_interval_sec)
