@@ -6,7 +6,11 @@ import json
 import time
 import logging
 
+import requests
+
+
 logger = logging.getLogger(__file__)
+
 
 
 def basename(ffn):
@@ -48,12 +52,12 @@ def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
 
         r = requests.get(url)
         cnt2 = json.loads(r.text)['count']
-        d = cnt2 - cnt1
+        d = cnt1 - cnt2
         if 0 == d:
-            logger.info('return due to count is stable of {}'.format(url))
+            logger.info('return due to count is stable, {} -> {} = {} in ES {}'.format(cnt1, cnt2, d, url))
             break;
         
-        logger.info('continue, diff of count {} - {} = {}'.format(cnt2, cnt1, d)) 
+        logger.info('continue due to, {} -> {} = {} in ES {}'.format(cnt1, cnt2, d, url))
         cnt1 = cnt2
   
 

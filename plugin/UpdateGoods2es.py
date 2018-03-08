@@ -9,13 +9,13 @@ import subprocess
 import datetime
 import plugin.Task as Task
 
-#file_path = os.path.dirname(os.path.realpath(__file__))
-#lib_path = os.path.realpath(os.path.join(file_path, os.pardir, 'lib'))
-#if not lib_path in sys.path : sys.path.append(lib_path)
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
 import lib.utility as utility
+
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateGoods2es(Task.Task):
@@ -41,7 +41,7 @@ class UpdateGoods2es(Task.Task):
                 codename = bucketId.split('-')[-1]
 
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
-                self.logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
+                logger.info('%s %s %s %s', event_type, bucketId, objectId, generation)
 
                 #-- valid path in GCS
                 #   gocc/update/sohappy_gocc_20180111.tar.gz
@@ -57,27 +57,27 @@ class UpdateGoods2es(Task.Task):
                         unpackPath = os.path.join('/tmp', folder)
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         subprocess.call(cmd.split(' '))
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         
                         cmd = 'mkdir -p {}'.format(unpackPath)
                         subprocess.call(cmd.split(' '))
-                        self.logger.info(cmd)
+                        logger.info(cmd)
 
                         bkName = 'gs://' + os.path.join(bucketId, objectId)
                         cmd = 'gsutil cp {} {}'.format(bkName, unpackPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
                         tarPath = os.path.join(unpackPath, objectId.split('/')[-1])
                         cmd = 'tar -xvf {} -C {}'.format(tarPath, unpackPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
                         dataPath = os.path.join(unpackPath, 'update_data')
 
                         #-- data filenames 
                         dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) if utility.basename(fn).lower().endswith('goods') ]
-                        self.logger.info(dataFNs)
+                        logger.info(dataFNs)
 
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
@@ -89,14 +89,14 @@ class UpdateGoods2es(Task.Task):
                         #-- insert Header 
                         for fn in dataFNs :
                             ffn = os.path.join(dataPath, fn)
-                            self.logger.info('%s has_header: %s', ffn, utility.has_header(ffn))
+                            logger.info('%s has_header: %s', ffn, utility.has_header(ffn))
 
                             if not utility.has_header(ffn):
                                 cmd = "sed -i '1s/^/{}\\n/' {}"
                                 if ffn.endswith('Goods.tsv'): 
                                     cmd = cmd.format(UpdateGoods2es.HEADER_GOODS, ffn)
 
-                                self.logger.info(cmd)
+                                logger.info(cmd)
                                 subprocess.call([cmd], shell=True)
                        
                         #-- copy to GCS
@@ -104,7 +104,7 @@ class UpdateGoods2es(Task.Task):
                         gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
                         dataFiles = os.path.join(dataPath, '*')
                         cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         #-- load into BQ tmp dataset
@@ -117,7 +117,7 @@ class UpdateGoods2es(Task.Task):
 
                             if tmpTb.endswith('goods'):
                                 cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
-                                self.logger.info(cmd)
+                                logger.info(cmd)
                                 subprocess.call(cmd.split(' '))
                                 break
  
@@ -126,7 +126,7 @@ class UpdateGoods2es(Task.Task):
                             tmpDS = '{}_tmp'.format(codename)
                             baseName = os.path.splitext(fn)[0]
                             tmpTb = 'update_ext_{}'.format(baseName.lower())
-                            self.logger.info(tmpTb)
+                            logger.info(tmpTb)
 
                             dataset = '{}_tmp'.format(codename)
                             unimaTb = 'update_{}_{}'.format(baseName.lower(), date)
@@ -134,7 +134,7 @@ class UpdateGoods2es(Task.Task):
                             if tmpTb.endswith('goods'):
                                 sql = UpdateGoods2es.SQL2UNIMA_GOODS.format(tmpDS, tmpTb)
                                 cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={}.{} {}'.format(dataset, unimaTb, sql)
-                                self.logger.info(cmd)
+                                logger.info(cmd)
                                 subprocess.call(cmd.split(' '))
                                 break
 
@@ -144,35 +144,35 @@ class UpdateGoods2es(Task.Task):
                         sql = UpdateGoods2es.SQL_FROM_EXPORT.format(codename, codename, date)
                         cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sql)
 
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
                         jsonGoodsFN = "{}_goods_{}.json".format(codename, date)
                         gsJsonGoodsPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder, jsonGoodsFN)
                         cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(exportTmpTb, gsJsonGoodsPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
                         #-- local json path
                         jsonPath = '/tmp/gocc2es_update'
                         cmd = 'mkdir -p {}'.format(jsonPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         #-- copy to local
                         #-- >, arrow to trigger file change detection of logstash
                         jsonPath = os.path.join(jsonPath, jsonGoodsFN)
                         cmd = 'gsutil cat {} > {}'.format(gsJsonGoodsPath, jsonPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
                         #-- clean tmp folder in GCS 
                         cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
                         cmd = 'rm -rf {}'.format(unpackPath) 
-                        self.logger.info(cmd)
+                        logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
     def check_file_encoding(self, dirPath, dataFNs):
@@ -184,7 +184,7 @@ class UpdateGoods2es(Task.Task):
                     with io.open(fpath, 'r', encoding='utf-8') as f :
                         f.readlines()
                 except UnicodeDecodeError:
-                    self.logger.error(traceback.format_exc())
+                    logger.error(traceback.format_exc())
                     return False
         return True
 
@@ -202,7 +202,7 @@ class UpdateGoods2es(Task.Task):
                             num_fields_1st_row = len(fields)
                         else :
                              if len(fields) != num_fields_1st_row :
-                                self.logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
+                                logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
                                 return False
         return True
     

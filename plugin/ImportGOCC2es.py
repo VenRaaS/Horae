@@ -104,7 +104,7 @@ class ImportGOCC2es(Task.Task):
                                 o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
                                 fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
                  
-                url = URL_ES_GOCC_COUNT.format(codename)
+                url = ImportGOCC2es.URL_ES_GOCC_COUNT.format(codename)
                 utility.returnOnlyIfCountStable_es(url, 5)
 #TODO publish a message 
  

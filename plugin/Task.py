@@ -16,6 +16,9 @@ from lib.tstatus import TaskStatus
 import lib.pull_pub as pull_pub
 
 
+logger = logging.getLogger(__name__)
+
+
 class Task(threading.Thread) :
     isTask = True
 
@@ -36,23 +39,13 @@ class Task(threading.Thread) :
         #-- message pull from subscription
         self.sub_msg = sub_msg
 
-        #-- logging setup
-        formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s) %(name)s - %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.DEBUG)
-        ch.setFormatter(formatter)
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
-        if len(self.logger.handlers) <= 0:
-            self.logger.addHandler(ch)
-
     def exe(self, msg) :
-        self.logger.info(msg.get_attributes())
+        logger.info(msg.get_attributes())
 #        if hasattr(msg, 'attributes'):
-#            self.logger.info(msg.attributes)
+#            logger.info(msg.attributes)
 
 #        if hasattr(msg, 'data'):
-#            self.logger.info(msg.data)
+#            logger.info(msg.data)
     
     #-- thread entry point
     #   https://docs.python.org/2/library/threading.html#thread-objects
@@ -62,11 +55,11 @@ class Task(threading.Thread) :
             self.exe(self.sub_msg)
 
         except Exception as e:
-            self.logger.error(e, exc_info=True)
+            logger.error(e, exc_info=True)
 
         finally: 
             self.st.end()
-            self.logger.info(self.st.state)
+            logger.info(self.st.state)
     
     ## A helper function to publish a message
     ## usage:
@@ -88,7 +81,7 @@ class Task(threading.Thread) :
             pull_pub.publish_message(client, topic_enum, hmsgs)
             
         except Exception as e:
-            self.logger.error(e, exc_info=True)
+            logger.error(e, exc_info=True)
 
 
 if '__main__' == __name__:
