@@ -24,12 +24,13 @@ class ImportGOCC2es(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bigquery'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
+    PUB_TOPIC = EnumTopic['es-cluster']
 
     SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {}'
     
     SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
 
-    URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc/_count'
+    URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
 
 
     def exe(self, hmsg) :
@@ -62,12 +63,16 @@ class ImportGOCC2es(Task.Task):
                 logger.info(cmd)
                 subprocess.call(cmd.split(' '))
 
+                gocc_date = None
                 for t in objectIds:
                     srcDS, srcTb = t.split('.')
 
                     sql = ''
                     if srcTb.startswith('goods_'):
                         sql = ImportGOCC2es.SQL_EXPORT_UNIMA_GOODS.format(codename, t)
+                        m = re.search(r'_(\d{8})$', srcTb)
+                        if m:
+                            gocc_date = m.group(1)
                     elif srcTb.startswith('category_'):
                         sql = ImportGOCC2es.SQL_EXPORT_UNIMA_CATEGORY.format(codename, t)
                     else:
@@ -103,10 +108,23 @@ class ImportGOCC2es(Task.Task):
                                 o = json.loads(line)
                                 o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
                                 fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
-                 
-                url = ImportGOCC2es.URL_ES_GOCC_COUNT.format(codename)
+                
+                #-- suspend until data sync to ES via logstash
+                url = ImportGOCC2es.URL_ES_GOCC_COUNT.format(codename, gocc_date)
+                logger.info(url)
                 utility.returnOnlyIfCountStable_es(url, 5)
-#TODO publish a message 
+
+                if gocc_date:
+                    obj = '{}_gocc_{}'.format(codename, gocc_date)
+                    msgObjs = [ obj ]
+
+                    #-- publish message    
+                    hmsg = HMessage()
+                    hmsg.set_codename(codename)
+                    hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
+                    hmsg.set_objectIds(msgObjs)
+                    logger.info(hmsg)
+                    self.pub_message(ImportGOCC2es.PUB_TOPIC, [hmsg])
  
 ###                    #-- copy to local
 ###                    #-- >, arrow to trigger file change detection of logstash
