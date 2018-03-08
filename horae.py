@@ -6,10 +6,11 @@
 
 import time
 import threading
-import logging
 import os
 import imp
 import sys
+import logging
+import logging.config
 from logging.handlers import RotatingFileHandler
 from oauth2client.client import GoogleCredentials
 from googleapiclient import discovery
@@ -101,14 +102,11 @@ if '__main__' == __name__ :
 
     #-- logging setup
     #   see https://docs.python.org/2/howto/logging.html#configuring-logging
-    fmt = logging.Formatter("[%(asctime)s][%(levelname)s] %(filename)s(%(lineno)s): %(message)s", datefmt='%Y-%m-%d %H:%M:%S')
-    log_path = os.path.join(log_dir, 'horae.log')
-    fh = RotatingFileHandler(log_path, maxBytes=20*1024*1024 , backupCount=10)
-    fh.setFormatter(fmt)
-
+    #
+    logging.config.fileConfig('logging.conf')
     logger = logging.getLogger(__name__)
-    logger.addHandler(fh)
-    logger.setLevel(logging.DEBUG)
+
+    logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
     #-- google API client
     credentials = GoogleCredentials.get_application_default()
