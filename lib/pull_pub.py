@@ -72,8 +72,8 @@ def pull_messages(client, sub_enum, callback_fn):
 def publish_message(client, topic_enum, hmsgs):
     try:
         proj_name = get_projectID()
-
         topic = get_full_topic_name(proj_name, topic_enum.name)
+        logger.info('topic: {}'.format(topic))
 
         #-- concate message list
         #   note that the client.projects().subscriptions().pull(...) gets message seperately, e.g. len(receivedMessages) = 1, even if 1 < len(hmsgs)
