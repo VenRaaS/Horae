@@ -44,6 +44,14 @@ def lowercase_firstLine(ffn):
     logger.info(cmd)
     subprocess.call([cmd], shell=True)
 
+def count_index_es(url):
+    logger.info('GET {}'.format(url))
+    r = requests.get(url)
+    logger.info(r.text)
+
+    resp = json.loads(r.text)
+    return resp['count'] if 'count' in resp else 0
+
 def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
     logger.info('GET {}'.format(url))
     r = requests.get(url)
