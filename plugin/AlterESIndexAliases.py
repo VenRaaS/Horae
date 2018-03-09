@@ -27,7 +27,8 @@ class AlterESIndexAliases(Task.Task):
 #    PUB_TOPIC = EnumTopic['es-cluster']
 
     URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
-
+    URL_ES_GOCC_ALIASES = 'http://es-node-01:9200/_aliases'
+ 
 
     def exe(self, hmsg) :
         if hmsg.get_attributes():
@@ -40,10 +41,10 @@ class AlterESIndexAliases(Task.Task):
 
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 logger.info('%s %s %s %s', codename, event_type, objectIds, generation)
-
-                gocc_date = None
+                
                 for o in objectIds:
                     esIdx = o
+                    logger.info(exIdx)
                     
                     if '_gocc_' in esIdx:
                         m = re.search(r'_(\d{8})$', esIdx)
@@ -57,8 +58,21 @@ class AlterESIndexAliases(Task.Task):
 
                         cnt_date = utility.count_index_es(url_gocc_date)
                         cnt_yest = utility.count_index_es(url_gocc_yest)
+                        cnt_ratio = cnt_date/cnt_yest;
+                        logger.info('count ratio: {} / {} = {}'.format(cnt_date, cnt_yest, cnt_ratio))
                     
-                        if cnt_yest * 0.7 <= cnt_date:
-#TODO _aliases                
+                        if cnt_date <= 0:
+                            logger.error('zero entity on {}'.format(url_gocc_date))
+                            continue
+
+                        if 0.7 <= cnt_ratio:
+                            idx_gocc = '{cn}_gocc_{dt}'.format(cn=codename, dt=date_str)
+                            alias_gocc = '{cn}_gocc'.format(ct=codename)
+                            
+                            act_alias = {'actions': [{'add': {'index': idx_gocc, 'alias': alias_gocc}}]}
+                            resp = requests.post(URL_ES_GOCC_ALIASES, data=json.dumps(act_alias))
+                            logger.info(resp.text)
+                        else:
+                            logger.error(' ')
 
 
