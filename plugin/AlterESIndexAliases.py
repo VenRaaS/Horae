@@ -26,7 +26,14 @@ class AlterESIndexAliases(Task.Task):
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 #    PUB_TOPIC = EnumTopic['es-cluster']
 
-    URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
+    URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{cn}_gocc_{dt}/_count'
+
+    #-- retrieving existing aliases
+    #   see https://www.elastic.co/guide/en/elasticsearch/reference/1.7/indices-aliases.html#alias-retrieving
+    URL_ES_GOCC_ALIAS = 'http://es-node-01:9200/_alias/{cn}_gocc'
+
+    #-- add and remove aliases 
+    #   see https://www.elastic.co/guide/en/elasticsearch/reference/1.7/indices-aliases.html#indices-aliases 
     URL_ES_GOCC_ALIASES = 'http://es-node-01:9200/_aliases'
  
 
@@ -41,38 +48,51 @@ class AlterESIndexAliases(Task.Task):
 
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 logger.info('%s %s %s %s', codename, event_type, objectIds, generation)
-                
+
                 for o in objectIds:
                     esIdx = o
-                    logger.info(exIdx)
-                    
                     if '_gocc_' in esIdx:
                         m = re.search(r'_(\d{8})$', esIdx)
                         date_str = m.group(1)
                         date = datetime.strptime(date_str, '%Y%m%d')
                         yest = date - timedelta(days=1)
                         yest_str = yest.strftime('%Y%m%d')
+                        logger.info('{} -> {}'.format(yest_str, date_str))
  
-                        url_gocc_date = this.URL_ES_GOCC_COUNT.format(codename, date_str) 
-                        url_gocc_yest = this.URL_ES_GOCC_COUNT.format(codename, yest_str) 
+                        url_gocc_cnt_date = AlterESIndexAliases.URL_ES_GOCC_COUNT.format(cn=codename, dt=date_str)
+                        url_gocc_cnt_yest = AlterESIndexAliases.URL_ES_GOCC_COUNT.format(cn=codename, dt=yest_str)
+                        logger.info('{} -> {}'.format(url_gocc_cnt_yest, url_gocc_cnt_date))
 
-                        cnt_date = utility.count_index_es(url_gocc_date)
-                        cnt_yest = utility.count_index_es(url_gocc_yest)
-                        cnt_ratio = cnt_date/cnt_yest;
-                        logger.info('count ratio: {} / {} = {}'.format(cnt_date, cnt_yest, cnt_ratio))
+                        cnt_date = utility.count_index_es(url_gocc_cnt_date)
+                        cnt_yest = utility.count_index_es(url_gocc_cnt_yest)
+                        cnt_ratio = float(cnt_date)/float(cnt_yest);
+                        logger.info('count ratio (today/yesterday): {} / {} = {:.3f}'.format(cnt_date, cnt_yest, cnt_ratio))
                     
                         if cnt_date <= 0:
-                            logger.error('zero entity on {}'.format(url_gocc_date))
+                            logger.error('zero entity on {}'.format(url_gocc_cnt_date))
                             continue
 
-                        if 0.7 <= cnt_ratio:
+                        if 0.7 <= cnt_ratio:                            
                             idx_gocc = '{cn}_gocc_{dt}'.format(cn=codename, dt=date_str)
-                            alias_gocc = '{cn}_gocc'.format(ct=codename)
+                            alias_gocc = '{cn}_gocc'.format(cn=codename)
+
+                            rm_queries = []
+                            url_query_alias = AlterESIndexAliases.URL_ES_GOCC_ALIAS.format(cn=codename)
+                            r = requests.get(url_query_alias)
+                            idx_old_dict = json.loads(r.text)
+                            if 200 == getattr(r, 'status_code') and len(idx_old_dict.keys()):
+                                #-- collect all indices with the identical alias
+                                for k in idx_old_dict.keys():
+                                    idx_gocc_old = k
+                                    rm_queries.append( {'remove' : { 'index': idx_gocc_old, 'alias': alias_gocc}} )
                             
-                            act_alias = {'actions': [{'add': {'index': idx_gocc, 'alias': alias_gocc}}]}
-                            resp = requests.post(URL_ES_GOCC_ALIASES, data=json.dumps(act_alias))
+                            act_query = {'actions': [{'add': {'index': idx_gocc, 'alias': alias_gocc}}]}
+                            if rm_queries:
+                                act_query['actions'].extend(rm_queries)
+                            logger.info(act_query)
+
+                            resp = requests.post(AlterESIndexAliases.URL_ES_GOCC_ALIASES, data=json.dumps(act_query))
                             logger.info(resp.text)
                         else:
-                            logger.error(' ')
-
+                            logger.error('unreasonable ratio, please check raw GOCC count')
 
