@@ -16,7 +16,7 @@ from lib.tstatus import TaskStatus
 import lib.pull_pub as pull_pub
 
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 class Task(threading.Thread) :
@@ -31,6 +31,8 @@ class Task(threading.Thread) :
 
     def __init__(self, sub_msg) :
         threading.Thread.__init__(self)
+        
+        self.logger = logging.getLogger(__name__)
 
         #-- task status
         self.st = TaskStatus()
@@ -40,7 +42,7 @@ class Task(threading.Thread) :
         self.sub_msg = sub_msg
 
     def exe(self, msg) :
-        logger.info(msg.get_attributes())
+        self.logger.info(msg.get_attributes())
 #        if hasattr(msg, 'attributes'):
 #            logger.info(msg.attributes)
 
@@ -55,11 +57,11 @@ class Task(threading.Thread) :
             self.exe(self.sub_msg)
 
         except Exception as e:
-            logger.error(e, exc_info=True)
+            self.logger.error(e, exc_info=True)
 
         finally: 
             self.st.end()
-            logger.info(self.st.state)
+            self.logger.info(self.st.state)
     
     ## A helper function to publish a message
     ## usage:
@@ -81,7 +83,7 @@ class Task(threading.Thread) :
             pull_pub.publish_message(client, topic_enum, hmsgs)
             
         except Exception as e:
-            logger.error(e, exc_info=True)
+            self.logger.error(e, exc_info=True)
 
 
 if '__main__' == __name__:
