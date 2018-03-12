@@ -23,7 +23,6 @@ from lib.topic import EnumTopic
 import lib.pull_pub as pull_pub
 import plugin.Task
 
- 
 
 g_pluginMods = {}
 def load_plugin_modules() :
@@ -86,6 +85,8 @@ class sub_callback() :
                         #-- instantiate the object of plugin task class 
                         taskInst = taskClass(hMsg)
                         g_taskInstDict[k] = taskInst
+                        logger.info('{} is instancing and starting'.format(taskInst))
+
                         taskInst.start()
                     else:
                         logger.info('skip message due to task: %s is not expired yet, %s', k, hMsg.get_attributes())
@@ -93,19 +94,7 @@ class sub_callback() :
             except Exception as e:
                 logger.error(e, exc_info=True)
 
-
-if '__main__' == __name__ :
-    pwd_dir = os.path.dirname(os.path.realpath(__file__))
-    log_dir = os.path.join(pwd_dir, 'log')
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-
-    #-- logging setup
-    #   see https://docs.python.org/2/howto/logging.html#configuring-logging
-    #
-    logging.config.fileConfig('logging.conf')
-    logger = logging.getLogger(__name__)
-
+def main() :
     logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
     #-- google API client
@@ -130,8 +119,10 @@ if '__main__' == __name__ :
 
             cb_bk = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
             cb_bq = sub_callback(EnumSubscript['pull_bigquery'])
+            cb_es = sub_callback(EnumSubscript['pull_es-cluster'])
             pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'], cb_bk.callback)
             pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'], cb_bq.callback)
+            pull_pub.pull_messages(client, EnumSubscript['pull_es-cluster'], cb_es.callback)
 
             time.sleep(1)
                 
@@ -139,5 +130,19 @@ if '__main__' == __name__ :
         logger.info('shutdown requested, exiting... ')
 
     logger.info('end.')
+
+
+if '__main__' == __name__ :
+    pwd_dir = os.path.dirname(os.path.realpath(__file__))
+    log_dir = os.path.join(pwd_dir, 'log')
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+
+    #-- logging setup
+    #   see https://docs.python.org/2/howto/logging.html#configuring-logging
+    logging.config.fileConfig('logging.conf')
+    logger = logging.getLogger(__name__)
+
+    main()
 
 
