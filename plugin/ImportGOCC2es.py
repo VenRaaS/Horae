@@ -48,17 +48,19 @@ class ImportGOCC2es(Task.Task):
 
                 folder = 'gocc2es'
                 unpackPath = os.path.join('/tmp', folder)
-                #-- clean tmp local folder
-                cmd = 'rm -rf {}'.format(unpackPath)
-                subprocess.call(cmd.split(' '))
-                logger.info(cmd)
-                
                 cmd = 'mkdir -p {}'.format(unpackPath)
                 subprocess.call(cmd.split(' '))
                 logger.info(cmd)
 
+                #-- clean tmp local files
+                legacy_globFNs = '{cn}_*'.format(cn=codename) 
+                cmd = 'rm -f {}'.format(os.path.join(unpackPath, legacy_globFNs))
+                subprocess.call(cmd.split(' '))
+                logger.info(cmd)
+                
                 bucketId = 'ven-cust-{}'.format(codename)
                 gsDataPath = os.path.join('gs://', bucketId, 'tmp', 'gocc2es')
+                
                 #-- clean tmp folder in GCS 
                 cmd = 'gsutil rm -r -f {}'.format(gsDataPath)
                 logger.info(cmd)
@@ -87,7 +89,7 @@ class ImportGOCC2es(Task.Task):
                     subprocess.call(cmd.split(' '))
 
                     #-- export to GCS
-                    srcFN = srcTb
+                    srcFN = '{cn}_{tn}'.format(cn=codename, tn=srcTb)
                     gsJsonPath = os.path.join(gsDataPath, srcFN)
                     cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(expoDSTb, gsJsonPath)
                     logger.info(cmd)
@@ -99,16 +101,24 @@ class ImportGOCC2es(Task.Task):
                     subprocess.call(cmd.split(' '))
 
                     #-- lowercase of json KEY, i.e. field name
-                    jsonFN = '{}_{}.json'.format(codename, srcFN)
-                    jsonFP = os.path.join(unpackPath, jsonFN)
+                    lowerkeyFN = '{}.lk'.format(srcFN)
+                    lowerkeyFP = os.path.join(unpackPath, lowerkeyFN)
 
-                    with io.open(jsonFP, 'w', encoding='utf-8') as fo:
+                    with io.open(lowerkeyFP, 'w', encoding='utf-8') as fo:
                         rawFP = os.path.join(unpackPath, srcFN)
                         with io.open(rawFP, 'r', encoding='utf-8') as fi: 
                             for line in fi:
                                 o = json.loads(line)
                                 o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
                                 fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
+                   
+                    #-- > (cat arrow), in order to trigger file change detection of logstash
+                    jsonFN = '{}.json'.format(srcFN) 
+                    jsonFP = os.path.join(unpackPath, jsonFN)
+                    cmd = 'cat {} > {}'.format(lowerkeyFP , jsonFP)
+                    logger.info(cmd)
+                    subprocess.call(cmd, shell=True)
+                     
                 
                 #-- suspend until data sync to ES via logstash
                 url = ImportGOCC2es.URL_ES_GOCC_COUNT.format(codename, gocc_date)
@@ -126,6 +136,7 @@ class ImportGOCC2es(Task.Task):
                     hmsg.set_objectIds(msgObjs)
                     logger.info(hmsg)
                     self.pub_message(ImportGOCC2es.PUB_TOPIC, [hmsg])
+            
  
 ###                    #-- copy to local
 ###                    #-- >, arrow to trigger file change detection of logstash
