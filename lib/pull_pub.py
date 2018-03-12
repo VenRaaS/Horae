@@ -98,10 +98,18 @@ def publish_message(client, topic_enum, hmsgs):
 
  
 if '__main__' == __name__ :
-    msgObjs = ['gohappy_unima.category_20180305', 'gohappy_unima.goods_20180305', 'gohappy_unima.goodscatecode_20180305']
+    msgObjs = ['titantech_unima.category_20180310', 'titantech_unima.goods_20180310', 'titantech_unima.goodscatecode_201803i0'] 
     hmsg = HMessage()
     hmsg.set_codename('gohappy')
     hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
     hmsg.set_objectIds(msgObjs)
     logger.info(hmsg)
     pull_pub.publish_message(client, EnumTopic.bigquery, [hmsg])
+    
+    msgObjs = ['titantech_gocc_20180309']
+    hmsg = HMessage()
+    hmsg.set_codename('titantech')
+    hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
+    hmsg.set_objectIds(msgObjs)
+    logger.info(hmsg)
+    pull_pub.publish_message(client, EnumTopic['es-cluster'], [hmsg])
