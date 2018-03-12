@@ -53,6 +53,7 @@ def count_index_es(url):
     return resp['count'] if 'count' in resp else 0
 
 def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
+    time.sleep(2 * chk_interval_sec)
     logger.info('GET {}'.format(url))
     r = requests.get(url)
     logger.info(r.text)
