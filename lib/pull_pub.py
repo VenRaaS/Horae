@@ -98,7 +98,7 @@ def publish_message(client, topic_enum, hmsgs):
 
  
 if '__main__' == __name__ :
-    msgObjs = ['titantech_unima.category_20180310', 'titantech_unima.goods_20180310', 'titantech_unima.goodscatecode_201803i0'] 
+    msgObjs = ['titantech_unima.category_20180310', 'titantech_unima.goods_20180310', 'titantech_unima.goodscatecode_20180310'] 
     hmsg = HMessage()
     hmsg.set_codename('gohappy')
     hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
