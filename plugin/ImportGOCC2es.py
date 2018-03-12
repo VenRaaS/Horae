@@ -13,6 +13,7 @@ import requests
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
+from lib.hmessage import HMessage
 import lib.utility as utility
 import plugin.Task as Task
 
@@ -112,12 +113,12 @@ class ImportGOCC2es(Task.Task):
                 #-- suspend until data sync to ES via logstash
                 url = ImportGOCC2es.URL_ES_GOCC_COUNT.format(codename, gocc_date)
                 logger.info(url)
-                utility.returnOnlyIfCountStable_es(url, 5)
+                utility.returnOnlyIfCountStable_es(url)
 
                 if gocc_date:
                     obj = '{}_gocc_{}'.format(codename, gocc_date)
                     msgObjs = [ obj ]
-
+                    
                     #-- publish message    
                     hmsg = HMessage()
                     hmsg.set_codename(codename)
