@@ -203,7 +203,7 @@ class ImportGOCC2bq(Task.Task):
 
                 fpath = os.path.join(dirPath, fn) 
                 with open(fpath, 'rb') as f :
-                    reader = csv.reader(f, delimiter='\t')
+                    reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
                 
                     num_fields_1st_row = 0
                     for fields in reader :
@@ -211,7 +211,7 @@ class ImportGOCC2bq(Task.Task):
                             num_fields_1st_row = len(fields)
                         else :
                              if len(fields) != num_fields_1st_row :
-                                logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
+                                logger.error("{} line {} => {}, num of delimiters check failed!".format(fpath, reader.line_num, len(fields)))
                                 return False
         return True
     
