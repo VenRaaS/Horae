@@ -112,10 +112,10 @@ class ImportGOCC2es(Task.Task):
                                 o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
                                 fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
                    
-                    #-- > (cat arrow), in order to trigger file change detection of logstash
+                    #-- >> (cat arrow), in order to trigger file change detection of logstash
                     jsonFN = '{}.json'.format(srcFN) 
                     jsonFP = os.path.join(unpackPath, jsonFN)
-                    cmd = 'cat {} > {}'.format(lowerkeyFP , jsonFP)
+                    cmd = 'cat {} >> {}'.format(lowerkeyFP , jsonFP)
                     logger.info(cmd)
                     subprocess.call(cmd, shell=True)
                      
