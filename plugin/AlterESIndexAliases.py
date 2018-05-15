@@ -65,14 +65,17 @@ class AlterESIndexAliases(Task.Task):
 
                         cnt_date = utility.count_index_es(url_gocc_cnt_date)
                         cnt_yest = utility.count_index_es(url_gocc_cnt_yest)
-                        cnt_ratio = float(cnt_date)/float(cnt_yest);
+                        cnt_ratio = float(cnt_date)/float(cnt_yest) if cnt_yest else 1.0
                         logger.info('count ratio (today/yesterday): {} / {} = {:.3f}'.format(cnt_date, cnt_yest, cnt_ratio))
-                    
+
                         if cnt_date <= 0:
                             logger.error('zero entity on {}'.format(url_gocc_cnt_date))
                             continue
 
-                        if 0.7 <= cnt_ratio:                            
+                        if 0 == cnt_yest:
+                            logger.warning('zero entity on {}, an new company or sync failed before.'.format(url_gocc_cnt_yest))
+
+                        if 0.7 <= cnt_ratio:
                             idx_gocc = '{cn}_gocc_{dt}'.format(cn=codename, dt=date_str)
                             alias_gocc = '{cn}_gocc'.format(cn=codename)
 
