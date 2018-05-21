@@ -3,6 +3,7 @@ import base64
 import requests
 import logging
 
+import lib.utility as util
 from lib.hmessage import HMessage
 from lib.event import EnumEvent
 
@@ -12,26 +13,26 @@ PUBSUB_SCOPES = ["https://www.googleapis.com/auth/pubsub"]
 NUM_RETRIES = 3
 
 
-def fqrn(resource_type, project, resource):
-    """Return a fully qualified resource name for Cloud Pub/Sub."""
-    return "projects/{}/{}/{}".format(project, resource_type, resource)
-
-def get_full_subscription_name(project, subscription):
-    """Return a fully qualified subscription name."""
-    return fqrn('subscriptions', project, subscription)
-
-def get_full_topic_name(project, topic):
-    """Return a fully qualified topic name."""
-    return fqrn('topics', project, topic)
-
-def get_projectID():
-    r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
-    return r.text
+###def fqrn(resource_type, project, resource):
+###    """Return a fully qualified resource name for Cloud Pub/Sub."""
+###    return "projects/{}/{}/{}".format(project, resource_type, resource)
+###
+###def get_full_subscription_name(project, subscription):
+###    """Return a fully qualified subscription name."""
+###    return fqrn('subscriptions', project, subscription)
+###
+###def get_full_topic_name(project, topic):
+###    """Return a fully qualified topic name."""
+###    return fqrn('topics', project, topic)
+###
+###def get_projectID():
+###    r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
+###    return r.text
 
 def pull_messages(client, sub_enum, callback_fn):
-    proj_name = get_projectID()
+    proj_name = util.get_projectID()
 
-    subscription = get_full_subscription_name(proj_name, sub_enum.name)
+    subscription = util.get_full_subscription_name(proj_name, sub_enum.name)
     
     try:
         logger.info("pull from {} ...".format(subscription))
@@ -71,8 +72,8 @@ def pull_messages(client, sub_enum, callback_fn):
 ##
 def publish_message(client, topic_enum, hmsgs):
     try:
-        proj_name = get_projectID()
-        topic = get_full_topic_name(proj_name, topic_enum.name)
+        proj_name = util.get_projectID()
+        topic = util.get_full_topic_name(proj_name, topic_enum.name)
         logger.info('topic: {}'.format(topic))
 
         #-- concate message list

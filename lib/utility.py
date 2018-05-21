@@ -12,6 +12,21 @@ import requests
 logger = logging.getLogger(__file__)
 
 
+def fqrn(resource_type, project, resource):
+    """Return a fully qualified resource name for Cloud Pub/Sub."""
+    return "projects/{}/{}/{}".format(project, resource_type, resource)
+
+def get_full_subscription_name(project, subscription):
+    """Return a fully qualified subscription name."""
+    return fqrn('subscriptions', project, subscription)
+
+def get_full_topic_name(project, topic):
+    """Return a fully qualified topic name."""
+    return fqrn('topics', project, topic)
+
+def get_projectID():
+    r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
+    return r.text
 
 def basename(ffn):
 	fn = os.path.basename(ffn)
