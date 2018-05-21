@@ -21,8 +21,16 @@ from lib.event import EnumEvent
 from lib.tstatus import EnumState
 from lib.topic import EnumTopic
 import lib.pull_pub as pull_pub
+import lib.utility as util
 import plugin.Task
 
+
+def create_topics(client, enum_topics) :
+    for t in enum_topics:
+        topic = client.projects().topics().create(
+            name=util.get_full_topic_name(util.get_projectID(), t.name),
+            body={}).execute(num_retries=3)
+        logger.info('Topic {} is created.'.format(topic['name']))
 
 g_pluginMods = {}
 def load_plugin_modules() :
@@ -102,6 +110,9 @@ def main() :
     if credentials.create_scoped_required():
         credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
     client = discovery.build('pubsub', 'v1', credentials=credentials)
+
+    create_topics(client, list(EnumTopic))
+    return
 
     #-- The subscriber is non-blocking, so we must keep the main thread alive
     #   and process messages in the background.
