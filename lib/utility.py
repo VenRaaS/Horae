@@ -39,6 +39,42 @@ def has_header(ffn):
         row1 = next(reader)
         return not any(c.isdigit() for c in row1)
 
+def list_all_topics(client) :
+    topics = []
+
+    next_page_token = None
+    while True:
+        resp = client.projects().topics().list(
+            project='projects/{}'.format(get_projectID()),
+            pageToken=next_page_token).execute(num_retries=3)
+
+        if 'topics' in resp:
+            topics.extend([ t['name'] for t in resp['topics'] ])
+
+        next_page_token = resp.get('nextPageToken')
+        if not next_page_token:
+            break
+    
+    return topics
+
+def list_all_subscrs(client) :
+    subscrs = []
+    
+    next_page_token = None
+    while True:
+        resp = client.projects().subscriptions().list(
+            project='projects/{}'.format(get_projectID()), 
+            pageToken=next_page_token).execute(num_retries=3)
+
+        if 'subscriptions' in resp:
+            subscrs.extend( [ s['name'] for s in resp['subscriptions'] ] )
+
+        next_page_token = resp.get('nextPageToken')
+        if not next_page_token:
+            break
+
+    return subscrs
+
 def remove_dq2space(ffn):
     cmd = "sed -i 's/\"/ /g' {}".format(ffn)
     logger.info(cmd)
