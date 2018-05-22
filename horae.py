@@ -9,6 +9,7 @@ import threading
 import os
 import imp
 import sys
+import json
 import logging
 import logging.config
 from logging.handlers import RotatingFileHandler
@@ -25,12 +26,38 @@ import lib.utility as util
 import plugin.Task
 
 
-def create_topics(client, enum_topics) :
-    for t in enum_topics:
-        topic = client.projects().topics().create(
-            name=util.get_full_topic_name(util.get_projectID(), t.name),
-            body={}).execute(num_retries=3)
-        logger.info('Topic {} is created.'.format(topic['name']))
+def create_topics(client, topics) :
+    existing_topics = util.list_all_topics(client)
+
+    for t in topics:
+        tp_fullname = util.get_full_topic_name(util.get_projectID(), t)
+
+        if not tp_fullname in existing_topics:
+            topic = client.projects().topics().create(
+                name=tp_fullname,
+                body={}).execute(num_retries=3)
+            logger.info('topic {} is created.'.format(tp_fullname))
+        else:
+            logger.info('topic {} has already existed.'.format(tp_fullname))
+
+def create_subscrs(client, subscrs):
+    fts = util.list_all_topics(client)
+    fss = util.list_all_subscrs(client)
+
+    for s in subscrs:
+        ftn = None
+        for ft in fts:
+            t = os.path.split(ft)[-1]
+            if s.endswith(t):
+                ftn = ft
+                break
+
+        fsn = util.get_full_subscription_name(util.get_projectID(), s)
+        if not fsn in fss:
+            subscription = client.projects().subscriptions().create(name=fsn, body={'topic': ftn}).execute(num_retries=3)
+            logger.info('subscription {} is created.'.format(subscription['name']))
+        else:
+            logger.info('subscription {} has already existed.'.format(fsn))
 
 g_pluginMods = {}
 def load_plugin_modules() :
@@ -111,7 +138,8 @@ def main() :
         credentials = credentials.create_scoped(pull_pub.PUBSUB_SCOPES)
     client = discovery.build('pubsub', 'v1', credentials=credentials)
 
-    create_topics(client, list(EnumTopic))
+    create_topics(client, [t.name for t in list(EnumTopic)])
+    create_subscrs(client, [s.name for s in list(EnumSubscript)])
     return
 
     #-- The subscriber is non-blocking, so we must keep the main thread alive
