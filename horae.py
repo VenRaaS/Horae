@@ -140,7 +140,6 @@ def main() :
 
     create_topics(client, [t.name for t in list(EnumTopic)])
     create_subscrs(client, [s.name for s in list(EnumSubscript)])
-    return
 
     #-- The subscriber is non-blocking, so we must keep the main thread alive
     #   and process messages in the background.
