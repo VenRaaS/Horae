@@ -87,7 +87,8 @@ class AlterESIndexAliases(Task.Task):
                                 #-- collect all indices with the identical alias
                                 for k in idx_old_dict.keys():
                                     idx_gocc_old = k
-                                    rm_queries.append( {'remove' : { 'index': idx_gocc_old, 'alias': alias_gocc}} )
+                                    if idx_gocc_old != idx_gocc:
+                                        rm_queries.append( {'remove' : { 'index': idx_gocc_old, 'alias': alias_gocc}} )
                             
                             act_query = {'actions': [{'add': {'index': idx_gocc, 'alias': alias_gocc}}]}
                             if rm_queries:
