@@ -12,6 +12,21 @@ import requests
 logger = logging.getLogger(__file__)
 
 
+def fqrn(resource_type, project, resource):
+    """Return a fully qualified resource name for Cloud Pub/Sub."""
+    return "projects/{}/{}/{}".format(project, resource_type, resource)
+
+def get_full_subscription_name(project, subscription):
+    """Return a fully qualified subscription name."""
+    return fqrn('subscriptions', project, subscription)
+
+def get_full_topic_name(project, topic):
+    """Return a fully qualified topic name."""
+    return fqrn('topics', project, topic)
+
+def get_projectID():
+    r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
+    return r.text
 
 def basename(ffn):
 	fn = os.path.basename(ffn)
@@ -23,6 +38,42 @@ def has_header(ffn):
         reader = csv.reader(f, delimiter='\t')
         row1 = next(reader)
         return not any(c.isdigit() for c in row1)
+
+def list_all_topics(client) :
+    topics = []
+
+    next_page_token = None
+    while True:
+        resp = client.projects().topics().list(
+            project='projects/{}'.format(get_projectID()),
+            pageToken=next_page_token).execute(num_retries=3)
+
+        if 'topics' in resp:
+            topics.extend([ t['name'] for t in resp['topics'] ])
+
+        next_page_token = resp.get('nextPageToken')
+        if not next_page_token:
+            break
+    
+    return topics
+
+def list_all_subscrs(client) :
+    subscrs = []
+    
+    next_page_token = None
+    while True:
+        resp = client.projects().subscriptions().list(
+            project='projects/{}'.format(get_projectID()), 
+            pageToken=next_page_token).execute(num_retries=3)
+
+        if 'subscriptions' in resp:
+            subscrs.extend( [ s['name'] for s in resp['subscriptions'] ] )
+
+        next_page_token = resp.get('nextPageToken')
+        if not next_page_token:
+            break
+
+    return subscrs
 
 def remove_dq2space(ffn):
     cmd = "sed -i 's/\"/ /g' {}".format(ffn)
