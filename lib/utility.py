@@ -75,7 +75,17 @@ def returnOnlyIfCountStable_es(url, chk_interval_sec=30):
         
         logger.info('continue due to, {} -> {} = {} in ES {}'.format(cnt1, cnt2, d, url))
         cnt1 = cnt2
-  
+
+##
+## see https://www.elastic.co/guide/en/elasticsearch/reference/1.7/indices-exists.html
+##
+def exists_index_es(url):
+    logger.info('HEAD {}'.format(url))
+    r = requests.head(url)
+    sc = r.status_code
+    logger.info(sc)
+    return True if 200 == sc else False
+
 
 if __name__ == '__main__':
    print has_header(sys.argv[1])
