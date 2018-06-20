@@ -10,6 +10,7 @@ import logging
 
 import requests
 
+#sys.path.append('.')
 from lib.event import EnumEvent
 from lib.topic import EnumTopic
 from lib.subscr import EnumSubscript
@@ -146,4 +147,11 @@ class ImportGOCC2es(Task.Task):
 ###                    subprocess.call(cmd, shell=True)
 ###
 
+if '__main__' == __name__:
+    hmsg = HMessage()
+    hmsg.set_codename('nono')
+    hmsg.set_eventType(EnumEvent.OBJECT_FINALIZE)
+    hmsg.set_objectIds( ['nono_unima.goods_20180111'] )
+    gocc2es = ImportGOCC2es(hmsg)
+    gocc2es.exe(hmsg) 
 
