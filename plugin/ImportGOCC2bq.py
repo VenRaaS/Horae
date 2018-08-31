@@ -117,7 +117,7 @@ class ImportGOCC2bq(Task.Task):
                        
                         #-- copy to GCS
                         gsTmpFolder = '_'.join(['gocc', date])
-                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
+                        gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder + '/')
                         dataFiles = os.path.join(dataPath, '*')
                         cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
                         logger.info(cmd)

@@ -26,6 +26,8 @@ class AlterESIndexAliases(Task.Task):
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 #    PUB_TOPIC = EnumTopic['es-cluster']
 
+    URL_ES_ROOT = 'http://es-node-01:9200/{idx}'
+
     URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{cn}_gocc_{dt}/_count'
 
     #-- retrieving existing aliases
@@ -34,8 +36,8 @@ class AlterESIndexAliases(Task.Task):
 
     #-- add and remove aliases 
     #   see https://www.elastic.co/guide/en/elasticsearch/reference/1.7/indices-aliases.html#indices-aliases 
-    URL_ES_GOCC_ALIASES = 'http://es-node-01:9200/_aliases'
- 
+    URL_ES_ALIASES = 'http://es-node-01:9200/_aliases'
+
 
     def exe(self, hmsg) :
         if hmsg.get_attributes():
@@ -95,8 +97,25 @@ class AlterESIndexAliases(Task.Task):
                                 act_query['actions'].extend(rm_queries)
                             logger.info(act_query)
 
-                            resp = requests.post(AlterESIndexAliases.URL_ES_GOCC_ALIASES, data=json.dumps(act_query))
+                            resp = requests.post(AlterESIndexAliases.URL_ES_ALIASES, data=json.dumps(act_query))
                             logger.info(resp.text)
                         else:
                             logger.error('unreasonable ratio, please check raw GOCC count')
+
+                    elif '_opp_' in esIdx:
+                        idx_opp = esIdx
+                        alias_opp = '{cn}_opp'.format(cn=codename)
+
+                        url_idx = AlterESIndexAliases.URL_ES_ROOT.format(idx=idx_opp)
+                        if utility.exists_index_es(url_idx):
+                            act_query = {'actions': [{'add': {'index': idx_opp, 'alias': alias_opp}}]}
+                            logger.info(act_query)
+
+                            resp = requests.post(AlterESIndexAliases.URL_ES_ALIASES, data=json.dumps(act_query))
+                            logger.info(resp.text)
+                        else:
+                            logger.info('{} is not existence'.format(url_idx))
+
+
+
 
