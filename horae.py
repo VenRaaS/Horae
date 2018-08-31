@@ -167,6 +167,9 @@ def main() :
     except KeyboardInterrupt:
         logger.info('shutdown requested, exiting... ')
 
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    
     logger.info('end.')
 
 
