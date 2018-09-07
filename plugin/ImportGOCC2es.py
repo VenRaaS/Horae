@@ -28,7 +28,7 @@ class ImportGOCC2es(Task.Task):
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic['es-cluster']
 
-    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {}'
+    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
     
     SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
 
