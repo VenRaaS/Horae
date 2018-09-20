@@ -103,7 +103,7 @@ class UpdateGoods2es(Task.Task):
                         gsTmpFolder = '_'.join(['gocc', date])
                         gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder)
                         dataFiles = os.path.join(dataPath, '*')
-                        cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
+                        cmd = 'gsutil cp {} {}/'.format(dataFiles, gsDataPath)
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
