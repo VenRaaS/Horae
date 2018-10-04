@@ -8,6 +8,9 @@ Here is an overview of the Horae framework and how the interaction between messa
 ![](https://drive.google.com/uc?id=1qnS-pLb7ZfK__745vSx9J5bdidx6b8Tw)
 
 ## Setup
+* Installation of python packages (check [pip](https://www.tecmint.com/install-pip-in-linux/) if pip isn't available in your os)  
+  `pip install -r requirements`
+  
 * [Applying notification to a bucket with gsutil](https://github.com/VenRaaS/Horae/wiki/Sync-GOCC-to-BigQuery-and-ES-via-Pub-Sub-Notifications-with-Cloud-Storage#applying-notification-to-a-bucket-with-gsutil)
 
 
