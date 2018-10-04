@@ -88,7 +88,8 @@ class ImportGOCC2bq(Task.Task):
                             fn = os.path.basename(fn)
                             isvalid, rowcnt = self.check_file_size(dataPath, fn)
                             if not isvalid:
-                                msg = 'skip file: {0} (gocc) on {1} due to invalid row count: {2:,}'.format(fn, date, rowcnt)
+                                tarfn = os.path.basename(tarPath)
+                                msg = 'skip file: {0} (in {1}) due to invalid row count: {2:,}'.format(fn, tarfn, rowcnt)
                                 logger.warn(msg)
                                 utility.warning2slack(codename, msg)
                                 continue
