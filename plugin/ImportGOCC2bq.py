@@ -83,7 +83,18 @@ class ImportGOCC2bq(Task.Task):
                         dataPath = os.path.join(unpackPath, 'data')
 
                         #-- data filenames 
-                        dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) ]
+                        dataFNs = []
+                        for fn in os.listdir(dataPath):
+                            fn = os.path.basename(fn)
+                            isvalid, rowcnt = self.check_file_size(dataPath, fn)
+                            if not isvalid:
+                                msg = 'skip file: {0} (gocc) on {1} due to invalid row count: {2:,}'.format(fn, date, rowcnt)
+                                logger.warn(msg)
+                                utility.warning2slack(codename, msg)
+                                continue
+
+                            dataFNs.append(os.path.basename(fn)) 
+
                         logger.info(dataFNs)
 
                         #-- check file format
@@ -183,6 +194,15 @@ class ImportGOCC2bq(Task.Task):
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
 
+    def check_file_size(self, dirPath, fn):
+        cnt = 0
+        fpath = os.path.join(dirPath, fn) 
+        with open(fpath, 'r') as f:
+            for i, l in enumerate(f):
+                cnt = i
+        cnt = cnt + 1
+                        
+        return (True, cnt) if cnt < 10 * 1000*1000 else (False, cnt)
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
