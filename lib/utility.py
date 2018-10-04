@@ -5,7 +5,6 @@ import subprocess
 import json
 import time
 import logging
-
 import requests
 
 
@@ -74,6 +73,14 @@ def list_all_subscrs(client) :
             break
 
     return subscrs
+
+def warning2slack(codename, msg):
+    url_slackwebhook = 'https://hooks.slack.com/services/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'
+
+    j = {'username': 'Horae', 'text': msg, 'icon_emoji': ':joy_cat:', 'channel': '#{c}-gcp-monitoring'.format(c=codename)}
+    resp = requests.post(url_slackwebhook, json = j)
+    return resp
+        
 
 def remove_dq2space(ffn):
     cmd = "sed -i 's/\"/ /g' {}".format(ffn)
