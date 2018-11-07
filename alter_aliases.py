@@ -6,15 +6,15 @@ import datetime
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
 
 LB_ES_HOSTS = '10.140.0.7'
-INDEX_CATS = ['oua', 'opp', 'mod', 'gocc']
 
-RESERVED_DAYS = {
+INDEX_CATS_2_RESERVED_DAYS = {
     'oua': 14,
     'opp': 14, 
     'gocc': 3,
     'mod': 3,
 }
 
+#-- ES APIs
 URL_VENRAAS_COMS = 'http://{h}:9200/venraas/_search?sort=update_dt:desc&size=1'
 URL_DISTINCT_INDICES = 'http://{h}:9200/{cn}_{cat}_*/_search?size=0'
 JSON_DISTINCT_INDICES = {"aggs":{"index_list":{"terms":{"field":"_index","size":100}}}}
@@ -29,9 +29,7 @@ JSON_ADD_ALIASES = {"actions":[{"add":{"index":"{cn}_{cat}_*","alias":"{cn}_{cat
 
 
 
-
 if '__main__' == __name__:
-
     url = URL_VENRAAS_COMS.format(h=LB_ES_HOSTS)
     resp = requests.get(url)
     raasJson = json.loads(resp.text)
@@ -43,19 +41,20 @@ if '__main__' == __name__:
 
         codename = com['code_name']
         
-        resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
-        iaInfoJson = json.loads(resp.text)
- 
-        for cate in INDEX_CATS:
+        for cate in INDEX_CATS_2_RESERVED_DAYS.keys():
+            resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
+            iaInfoJson = json.loads(resp.text)
+
             alias = '{cn}_{cat}'.format(cn=codename, cat=cate)
-            indices = filter(lambda k: alias in k, iaInfoJson)
+            indices = filter(lambda k: alias in k, iaInfoJson.keys())
             if len(indices) <= 0:
                 logging.warn('none of indices with prefix {0}'.format(alias))
                 continue
 
             indices.sort(reverse=True)
             idx_latest = indices[0]
-            alias_latest = next((i for i in indices if iaInfoJson[i]['aliases']), None)
+            #-- iaInfoJson, e.g. {"$CN_gocc_20181107":{"aliases":{"$CN_gocc":{}}}, "pchome_gocc_20181105":{"aliases":{}}, ...}
+            alias_latest = next((i for i in indices if alias in iaInfoJson[i]['aliases']), None)
 
             #-- alter aliases
             if cate in ['oua', 'opp']:
@@ -79,6 +78,7 @@ if '__main__' == __name__:
                     resp = requests.post(url, json=JSON_ADD_ALIAS)
                     logging.info('{0} --data {1}, {2}'.format(url, JSON_ADD_ALIAS, resp.text))
                 elif alias_latest != idx_latest:
+                    # the lastest alias != the latest index
                     logging.info('{0}(idx) <> {1}(alias), latest indices is not equal'.format(idx_latest, alias_latest))
                     logging.info('let\'s sync the alias to the latest index ...')
                     url = URL_COUNT_INDICE.format(h=LB_ES_HOSTS, idx=idx_latest)
@@ -104,12 +104,33 @@ if '__main__' == __name__:
                 else:
                     logging.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                  
+            #-- purge indices
+            resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
+            iaInfoJson = json.loads(resp.text)
+            indices = filter(lambda k: alias in k, iaInfoJson.keys())
+            if len(indices) <= 0:
+                logging.warn('none of indices with prefix {0}'.format(alias))
+                continue
+            
+            indices_aliasbeg = []
+            indices.sort(reverse=True)
+            for i, idx in enumerate(indices):
+                if alias in iaInfoJson[idx]['aliases']:
+                    indices_aliasbeg = indices[i: ]
+                    break
 
-#            #-- purge indices
-#            if RESERVED_DAYS[cate] < len(indices):
-#                for i in indices[ :len(indices) - RESERVED_DAYS[cate]]:
-#                    urldel = URL_DELETE_INDICE.format(h=LB_ES_HOSTS, idx=i)
-#                    resp = requests.delete(urldel)
-#                    logging.info('del {0}, {1}'.format(urldel, resp.text))
- 
-            today = datetime.date.today().strftime('%Y%m%d')
+            revdays = INDEX_CATS_2_RESERVED_DAYS[cate]
+            if len(indices_aliasbeg) <= revdays:
+                logging.info('{0} has {1} indices and begin at {2}, <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
+            else:
+                idx_end = revdays - len(indices_aliasbeg)
+#                ymd = idx_latest.split('_')[-1]
+#                dt_latest = datetime.datetime.strptime(ymd, '%Y%m%d')
+#                dt_end =  dt_latest - datetime.timedelta(days=revdays)
+                for idx in indices_aliasbeg[idx_end: ] :
+                    urldel = URL_DELETE_INDICE.format(h=LB_ES_HOSTS, idx=idx)
+                    resp = requests.delete(urldel)
+                    logging.info('delete {0}, {1}'.format(urldel, resp.text))
+
+
+
