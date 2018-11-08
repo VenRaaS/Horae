@@ -5,7 +5,7 @@ import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
 
-LB_ES_HOSTS = '10.140.0.7'
+LB_ES_HOSTS = 'es-node-01'
 
 INDEX_CATS_2_RESERVED_DAYS = {
     'oua': 14,
@@ -29,6 +29,21 @@ JSON_ADD_ALIASES = {"actions":[{"add":{"index":"{cn}_{cat}_*","alias":"{cn}_{cat
 
 
 
+def get_sorted_indices(alias, sort_decending=True):
+    indices = []
+ 
+    resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
+    iaInfoJson = json.loads(resp.text)
+    indices = filter(lambda k: alias in k, iaInfoJson.keys())
+
+    if sort_decending:
+        indices.sort(reverse=True)
+    else:
+        indices.sort()
+
+    return (indices, iaInfoJson)
+
+
 if '__main__' == __name__:
     url = URL_VENRAAS_COMS.format(h=LB_ES_HOSTS)
     resp = requests.get(url)
@@ -42,18 +57,18 @@ if '__main__' == __name__:
         codename = com['code_name']
         
         for cate in INDEX_CATS_2_RESERVED_DAYS.keys():
-            resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
-            iaInfoJson = json.loads(resp.text)
-
             alias = '{cn}_{cat}'.format(cn=codename, cat=cate)
-            indices = filter(lambda k: alias in k, iaInfoJson.keys())
+
+            indices, iaInfoJson = get_sorted_indices(alias)
             if len(indices) <= 0:
                 logging.warn('none of indices with prefix {0}'.format(alias))
                 continue
 
-            indices.sort(reverse=True)
+            #-- the latest index
             idx_latest = indices[0]
-            #-- iaInfoJson, e.g. {"$CN_gocc_20181107":{"aliases":{"$CN_gocc":{}}}, "pchome_gocc_20181105":{"aliases":{}}, ...}
+
+            #-- find the latest Aliased index
+            #   iaInfoJson, e.g. {"$CN_gocc_20181107":{"aliases":{"$CN_gocc":{}}}, "pchome_gocc_20181105":{"aliases":{}}, ...}
             alias_latest = next((i for i in indices if alias in iaInfoJson[i]['aliases']), None)
 
             #-- alter aliases
@@ -105,15 +120,12 @@ if '__main__' == __name__:
                     logging.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                  
             #-- purge indices
-            resp = requests.get(URL_ALIASES.format(h=LB_ES_HOSTS))
-            iaInfoJson = json.loads(resp.text)
-            indices = filter(lambda k: alias in k, iaInfoJson.keys())
+            indices, iaInfoJson = get_sorted_indices(alias)
             if len(indices) <= 0:
                 logging.warn('none of indices with prefix {0}'.format(alias))
                 continue
             
             indices_aliasbeg = []
-            indices.sort(reverse=True)
             for i, idx in enumerate(indices):
                 if alias in iaInfoJson[idx]['aliases']:
                     indices_aliasbeg = indices[i: ]
@@ -121,7 +133,7 @@ if '__main__' == __name__:
 
             revdays = INDEX_CATS_2_RESERVED_DAYS[cate]
             if len(indices_aliasbeg) <= revdays:
-                logging.info('{0} has {1} indices and begin at {2}, <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
+                logging.info('[{0}] has {1} indices and the latest alias on [{2}], <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
             else:
                 idx_end = revdays - len(indices_aliasbeg)
 #                ymd = idx_latest.split('_')[-1]
