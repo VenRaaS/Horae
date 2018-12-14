@@ -81,7 +81,7 @@ def load_plugin_modules() :
                 if mod_name in g_pluginMods:
                     py_mod = imp.reload( g_pluginMods[mod_name] )
                 else:
-                    py_mod = imp.load_source(mod_name, mod_path) 
+                    py_mod = imp.load_source(mod_name, mod_path)
 
                 g_pluginMods[mod_name] = py_mod
 
@@ -107,6 +107,7 @@ class sub_callback() :
                 #-- must inherit Task.Task
                 logger.info('%s, %s is inherited from Task.Task: %s', eventType, taskClass, hasattr(taskClass, 'isTask'))
                 if not hasattr(taskClass, 'isTask'): continue
+                if not taskClass.isTask: continue
                 
                 #-- math Subscription and eventType between message and plugin class (taskClass)
                 if not self.subscript in taskClass.LISTEN_SUBSCRIPTS: continue
@@ -116,7 +117,8 @@ class sub_callback() :
                 logger.info('task instance key: %s', k)
 
                 with g_taskInstDict_lock:
-                    if not k in g_taskInstDict or EnumState.END == g_taskInstDict[k].st.state:
+#                    if not k in g_taskInstDict or EnumState.END == g_taskInstDict[k].st.state:
+                    if not k in g_taskInstDict:
                         #-- instantiate the object of plugin task class 
                         taskInst = taskClass(hMsg)
                         g_taskInstDict[k] = taskInst
@@ -147,13 +149,28 @@ def main() :
         while True:
             load_plugin_modules()
             with g_taskInstDict_lock:
+                #-- release task instances
                 keys = g_taskInstDict.keys()
                 for k in keys:
                     taskInst = g_taskInstDict[k]
                     if EnumState.END == taskInst.st.state:
                         if taskInst.INVOKE_INTERVAL_SEC < taskInst.st.elapsed_afterend_sec():
                             del g_taskInstDict[k]
-                            logger.info('del %s', k)
+                            logger.info('del task with key: %s', k)
+
+                #-- instantiate the Cron_ plugins
+                for mod_name, py_mod in g_pluginMods.iteritems():
+                    if mod_name.lower().startswith('cron_'):
+                        #-- get class
+                        taskClass = getattr(py_mod, mod_name)
+
+                        k = '{}'.format(mod_name)
+                        if not k in g_taskInstDict:
+                            taskInst = taskClass()
+                            g_taskInstDict[k] = taskInst
+                            logger.info('cron task instance key: %s', k)
+                            logger.info('{} is instancing and starting'.format(taskInst))
+                            taskInst.start()
 
             cb_bk = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
             cb_bq = sub_callback(EnumSubscript['pull_bigquery'])
