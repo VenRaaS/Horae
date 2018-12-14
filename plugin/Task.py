@@ -24,14 +24,16 @@ class Task(threading.Thread) :
 
     #-- configuration
     INVOKE_INTERVAL_SEC = 30
-    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'], EnumSubscript['pull_bigquery'] ]
-    LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
-    PUB_TOPIC = EnumTopic.bigquery
+    LISTEN_SUBSCRIPTS = []
+    LISTEN_EVENTS = []
+    PUB_TOPIC = None
+#    LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'], EnumSubscript['pull_bigquery'] ]
+#    LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
+#    PUB_TOPIC = EnumTopic.bigquery
 
 
-    def __init__(self, sub_msg) :
+    def __init__(self, sub_msg=None) :
         threading.Thread.__init__(self)
-        
         self.logger = logging.getLogger(__name__)
 
         #-- task status
@@ -41,20 +43,22 @@ class Task(threading.Thread) :
         #-- message pull from subscription
         self.sub_msg = sub_msg
 
-    def exe(self, msg) :
+    def exe(self, msg=None) :
         self.logger.info(msg.get_attributes())
 #        if hasattr(msg, 'attributes'):
-#            logger.info(msg.attributes)
-
+#            self.logger.info(msg.attributes)
 #        if hasattr(msg, 'data'):
-#            logger.info(msg.data)
+#            self.logger.info(msg.data)
     
-    #-- thread entry point
-    #   https://docs.python.org/2/library/threading.html#thread-objects
+    ## thread entry point
+    ##   https://docs.python.org/2/library/threading.html#thread-objects
     def run(self) :
         try:
             self.st.start()
-            self.exe(self.sub_msg)
+            if self.sub_msg:
+                self.exe(self.sub_msg)
+            else:
+                self.exe()
 
         except Exception as e:
             self.logger.error(e, exc_info=True)
