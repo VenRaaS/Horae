@@ -7,5 +7,6 @@ class EnumEvent(Enum) :
     DEFAULT = 1
     OBJECT_FINALIZE = 2
     OBJECT_DELETE = 3
+    CRON_SCHEDULER = 4
 
 
