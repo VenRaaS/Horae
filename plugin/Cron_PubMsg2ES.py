@@ -45,7 +45,7 @@ class Cron_PubMsg2ES(Task.Task):
 
                     codename = com['code_name']
 
-                    #-- publish message of uploaded data
+                    #-- publish message for cron tasks
                     hmsg = HMessage()
                     hmsg.set_codename(codename)
                     hmsg.set_eventType(EnumEvent.CRON_SCHEDULER)
