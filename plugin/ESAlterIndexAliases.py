@@ -6,6 +6,7 @@ import re
 import sys
 import subprocess
 import logging
+import time
 from datetime import datetime, timedelta
 
 import requests
@@ -20,7 +21,7 @@ import plugin.Task as Task
 logger = logging.getLogger(__file__)
 
 
-class AlterESIndexAliases(Task.Task):
+class ESAlterIndexAliases(Task.Task):
     INVOKE_INTERVAL_SEC = 60
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_es-cluster'] ]
     LISTEN_EVENTS = [ EnumEvent['CRON_SCHEDULER'] ]
@@ -49,14 +50,14 @@ class AlterESIndexAliases(Task.Task):
             attributes = hmsg.get_attributes()
             event_type = hmsg.get_eventType()
             
-            if EnumEvent[event_type] in AlterESIndexAliases.LISTEN_EVENTS:
+            if EnumEvent[event_type] in ESAlterIndexAliases.LISTEN_EVENTS:
                 objectIds = hmsg.get_objectIds()
                 codename = hmsg.get_codename()
 
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 logger.info('%s %s %s %s', codename, event_type, objectIds, generation)
 
-                for cate in AlterESIndexAliases.INDEX_CATS_2_RESERVED_DAYS.keys():
+                for cate in ESAlterIndexAliases.INDEX_CATS_2_RESERVED_DAYS.keys():
                     alias = '{cn}_{cat}'.format(cn=codename, cat=cate)
 
                     indices, iaInfoJson = self.get_sorted_indices(alias)
@@ -75,11 +76,11 @@ class AlterESIndexAliases(Task.Task):
                     if cate in ['oua', 'opp']:
                         if None == alias_latest or \
                            alias_latest != idx_latest:
-                            AlterESIndexAliases.JSON_ADD_ALIASES['actions'][0]['add']['index'] = '{cn}_{cat}_*'.format(cn=codename, cat=cate)
-                            AlterESIndexAliases.JSON_ADD_ALIASES['actions'][0]['add']['alias'] = '{cn}_{cat}'.format(cn=codename, cat=cate)
-                            url = AlterESIndexAliases.URL_ALIASES.format(h=AlterESIndexAliases.LB_ES_HOSTS)
-                            resp = requests.post(url, json=AlterESIndexAliases.JSON_ADD_ALIASES)
-                            logging.info('{0} --data {1}, {2}'.format(url, AlterESIndexAliases.JSON_ADD_ALIASES, resp.text))
+                            ESAlterIndexAliases.JSON_ADD_ALIASES['actions'][0]['add']['index'] = '{cn}_{cat}_*'.format(cn=codename, cat=cate)
+                            ESAlterIndexAliases.JSON_ADD_ALIASES['actions'][0]['add']['alias'] = '{cn}_{cat}'.format(cn=codename, cat=cate)
+                            url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
+                            resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_ALIASES)
+                            logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIASES, resp.text))
                         else:
                             logging.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                     elif cate in ['mod', 'gocc']:
@@ -87,32 +88,43 @@ class AlterESIndexAliases(Task.Task):
                             # newborn, none alias yet
                             logging.info('newborn, none alias yet')
                             logging.info('let\'s alias the latest one {0} ...'.format(idx_latest))
-                            AlterESIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['index'] = idx_latest
-                            AlterESIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['alias'] = alias
-                            url = AlterESIndexAliases.URL_ALIASES.format(h=AlterESIndexAliases.LB_ES_HOSTS)
-                            resp = requests.post(url, json=AlterESIndexAliases.JSON_ADD_ALIAS)
-                            logging.info('{0} --data {1}, {2}'.format(url, AlterESIndexAliases.JSON_ADD_ALIAS, resp.text))
+                            ESAlterIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['index'] = idx_latest
+                            ESAlterIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['alias'] = alias
+                            url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
+                            resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_ALIAS)
+                            logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIAS, resp.text))
                         elif alias_latest != idx_latest:
                             # the lastest alias != the latest index
                             logging.info('{0}(idx) <> {1}(alias), latest indices is not equal'.format(idx_latest, alias_latest))
                             logging.info('let\'s sync the alias to the latest index ...')
-                            url = AlterESIndexAliases.URL_COUNT_INDICE.format(h=AlterESIndexAliases.LB_ES_HOSTS, idx=idx_latest)
-                            resp = requests.get(url)
-                            cnt_idx = float(json.loads(resp.text)['count'])
-                            url = AlterESIndexAliases.URL_COUNT_INDICE.format(h=AlterESIndexAliases.LB_ES_HOSTS, idx=alias_latest)
+
+                            cnt_set = set()
+                            url = ESAlterIndexAliases.URL_COUNT_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx_latest)
+                            for i in range(3):
+                                resp = requests.get(url)
+                                cnt_set.add( json.loads(resp.text)['count'] )
+                                if 1 != len(cnt_set):
+                                    logger.info('{0} is under syncing and check next time.'.format(url))
+                                    return
+                                time.sleep(10)
+                            
+                            cnt_idx = float( cnt_set.pop() )
+                            logger.info('{0} is stable with {1} docs.'.format(url, cnt_idx))
+                                
+                            url = ESAlterIndexAliases.URL_COUNT_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=alias_latest)
                             resp = requests.get(url)
                             cnt_alias = float(json.loads(resp.text)['count'])
                             ratio = min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias)
                             if 0.98 <= min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias):
                                 logging.info('0.98 < {0}, valid ratio.'.format(ratio))
                                 # json command
-                                AlterESIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['index'] = idx_latest
-                                AlterESIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['alias'] = alias 
-                                AlterESIndexAliases.JSON_ADD_RM_ALIAS['actions'][1]['remove']['index'] = alias_latest 
-                                AlterESIndexAliases.JSON_ADD_RM_ALIAS['actions'][1]['remove']['alias'] = alias
-                                url = AlterESIndexAliases.URL_ALIASES.format(h=AlterESIndexAliases.LB_ES_HOSTS)
-                                resp = requests.post(url, json=AlterESIndexAliases.JSON_ADD_RM_ALIAS)
-                                logging.info('{0} --data {1}, {2}'.format(url, AlterESIndexAliases.JSON_ADD_RM_ALIAS, resp.text))
+                                ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['index'] = idx_latest
+                                ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['alias'] = alias 
+                                ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][1]['remove']['index'] = alias_latest 
+                                ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][1]['remove']['alias'] = alias
+                                url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
+                                resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_RM_ALIAS)
+                                logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_RM_ALIAS, resp.text))
                             else:
                                 logging.warn('{0}/{1}= {2} < 0.98 unable to alter alias due to invalid ratio.'.format( \
                                     min(cnt_idx,cnt_alias), max(cnt_idx,cnt_alias), ratio))
@@ -131,16 +143,16 @@ class AlterESIndexAliases(Task.Task):
                             indices_aliasbeg = indices[i: ]
                             break
 
-                    revdays = AlterESIndexAliases.INDEX_CATS_2_RESERVED_DAYS[cate]
+                    revdays = ESAlterIndexAliases.INDEX_CATS_2_RESERVED_DAYS[cate]
                     if len(indices_aliasbeg) <= revdays:
                         logging.info('[{0}] has {1} indices and the latest alias on [{2}], <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
                     else:
                         idx_end = revdays - len(indices_aliasbeg)
-        #                ymd = idx_latest.split('_')[-1]
-        #                dt_latest = datetime.datetime.strptime(ymd, '%Y%m%d')
-        #                dt_end =  dt_latest - datetime.timedelta(days=revdays)
+#                       ymd = idx_latest.split('_')[-1]
+#                       dt_latest = datetime.datetime.strptime(ymd, '%Y%m%d')
+#                       dt_end =  dt_latest - datetime.timedelta(days=revdays)
                         for idx in indices_aliasbeg[idx_end: ] :
-                            urldel = AlterESIndexAliases.URL_DELETE_INDICE.format(h=AlterESIndexAliases.LB_ES_HOSTS, idx=idx)
+                            urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx)
                             resp = requests.delete(urldel)
                             logging.info('delete {0}, {1}'.format(urldel, resp.text))
 
@@ -148,7 +160,7 @@ class AlterESIndexAliases(Task.Task):
     def get_sorted_indices(self, alias, sort_decending=True):
         indices = []
      
-        resp = requests.get(AlterESIndexAliases.URL_ALIASES.format(h=AlterESIndexAliases.LB_ES_HOSTS))
+        resp = requests.get(ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS))
         iaInfoJson = json.loads(resp.text)
         indices = filter(lambda k: alias in k, iaInfoJson.keys())
 
