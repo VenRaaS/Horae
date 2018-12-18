@@ -13,22 +13,6 @@ PUBSUB_SCOPES = ["https://www.googleapis.com/auth/pubsub"]
 NUM_RETRIES = 3
 
 
-###def fqrn(resource_type, project, resource):
-###    """Return a fully qualified resource name for Cloud Pub/Sub."""
-###    return "projects/{}/{}/{}".format(project, resource_type, resource)
-###
-###def get_full_subscription_name(project, subscription):
-###    """Return a fully qualified subscription name."""
-###    return fqrn('subscriptions', project, subscription)
-###
-###def get_full_topic_name(project, topic):
-###    """Return a fully qualified topic name."""
-###    return fqrn('topics', project, topic)
-###
-###def get_projectID():
-###    r = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id', headers={'Metadata-Flavor':'Google'})
-###    return r.text
-
 def pull_messages(client, sub_enum, callback_fn):
     proj_name = util.get_projectID()
 
