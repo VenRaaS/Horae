@@ -39,6 +39,7 @@ class ESAlterIndexAliases(Task.Task):
     #-- ES APIs
     URL_DELETE_INDICE = 'http://{h}:9200/{idx}'
     URL_COUNT_INDICE = 'http://{h}:9200/{idx}/_count'
+    URL_GLOBALTP_CHECK = 'http://{h}:9200/{idx}/tp/_search?q=category_code:GlobalTP'
 
     URL_ALIASES = 'http://{h}:9200/_aliases'
     JSON_ADD_RM_ALIAS = {"actions":[{"add":{"index":"{newidx}","alias":"{ali}"}},{"remove":{"index":"{oldidx}","alias":"{ali}"}}]}
@@ -98,19 +99,32 @@ class ESAlterIndexAliases(Task.Task):
                             logging.info('{0}(idx) <> {1}(alias), latest indices is not equal'.format(idx_latest, alias_latest))
                             logging.info('let\'s sync the alias to the latest index ...')
 
+                            #-- check whether the number of docs is stable
                             cnt_set = set()
                             url = ESAlterIndexAliases.URL_COUNT_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx_latest)
                             for i in range(3):
                                 resp = requests.get(url)
                                 cnt_set.add( json.loads(resp.text)['count'] )
                                 if 1 != len(cnt_set):
-                                    logger.info('{0} is under syncing and check next time.'.format(url))
+                                    logger.info('{0} is under syncing and skip alias-alter this time.'.format(url))
                                     return
-                                time.sleep(10)
-                            
+                                time.sleep(10)                            
                             cnt_idx = float( cnt_set.pop() )
-                            logger.info('{0} is stable with {1} docs.'.format(url, cnt_idx))
-                                
+                            logger.info('{0} is stable with {1:,.0f} docs.'.format(url, cnt_idx))
+                            
+                            #-- check availability of GlobalTP
+                            if 'mod' == cate:
+                                url = ESAlterIndexAliases.URL_GLOBALTP_CHECK.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx_latest)
+                                resp = requests.get(url)
+                                if int(json.loads(resp.text)['hits']['total']) < 1:
+                                    msg = 'GlobalTP is unavailable in {0}, url: {1}'.format(idx_latest, url)
+                                    logger.warn(msg)
+                                    utility.warning2slack(codename, msg)
+                                    return
+                                else:
+                                    msg = 'GlobalTP is available in {0}, hits.total: {1}'.format(idx_latest, json.loads(resp.text)['hits']['total'])
+                                    logger.info(msg)
+                           
                             url = ESAlterIndexAliases.URL_COUNT_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=alias_latest)
                             resp = requests.get(url)
                             cnt_alias = float(json.loads(resp.text)['count'])
