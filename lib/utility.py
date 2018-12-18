@@ -77,7 +77,7 @@ def list_all_subscrs(client) :
 def warning2slack(codename, msg):
     #-- please fill the webhook url to get the critical instantly
     #   e.g. Slack Incoming Webhooks, https://api.slack.com/incoming-webhooks
-    url_slackwebhook = 'https://hooks.slack.com/services/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'
+    url_slackwebhook = ''
 
     j = {'username': 'Horae', 'text': msg, 'icon_emoji': ':joy_cat:', 'channel': '#{c}-gcp-monitoring'.format(c=codename)}
     resp = requests.post(url_slackwebhook, json = j)
