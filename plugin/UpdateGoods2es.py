@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateGoods2es(Task.Task):
-    INVOKE_INTERVAL_SEC = 60 * 20
+    INVOKE_INTERVAL_SEC = 60 * 10
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 
