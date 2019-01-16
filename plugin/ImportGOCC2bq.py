@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImportGOCC2bq(Task.Task):
-    INVOKE_INTERVAL_SEC = 600
+    INVOKE_INTERVAL_SEC = 60 * 20
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
     PUB_TOPIC = EnumTopic.bigquery
@@ -71,7 +71,7 @@ class ImportGOCC2bq(Task.Task):
                         logger.info(cmd)
 
                         bkName = 'gs://' + os.path.join(bucketId, objectId)
-                        cmd = 'gsutil cp {} {}'.format(bkName, unpackPath)
+                        cmd = 'gsutil -m cp {} {}'.format(bkName, unpackPath)
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
                         
@@ -98,13 +98,12 @@ class ImportGOCC2bq(Task.Task):
 
                         logger.info(dataFNs)
 
+                        self.remove_double_quote(dataPath, dataFNs)
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
-                        if not self.check_file_encoding(dataPath, dataFNs): return
-
+                        #if not self.check_file_encoding(dataPath, dataFNs): return
                         #-- data correction
                         self.dataCorrection(dataPath, dataFNs)
-                        
 
                         #-- insert Header 
                         for fn in dataFNs :
@@ -131,9 +130,10 @@ class ImportGOCC2bq(Task.Task):
                         gsTmpFolder = '_'.join(['gocc', date])
                         gsDataPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder + '/')
                         dataFiles = os.path.join(dataPath, '*')
-                        cmd = 'gsutil cp {} {}'.format(dataFiles, gsDataPath)
+                        cmd = 'gsutil -m cp {} {}'.format(dataFiles, gsDataPath)
                         logger.info(cmd)
-                        subprocess.call(cmd.split(' '))
+                        out = subprocess.check_output(cmd.split(' '))
+                        logger.info(out)
 
                         #-- load into BQ tmp dataset
                         for fn in dataFNs:
@@ -145,7 +145,8 @@ class ImportGOCC2bq(Task.Task):
 
                             cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
                             logger.info(cmd)
-                            subprocess.call(cmd.split(' '))
+                            out = subprocess.check_output(cmd.split(' '))
+                            logger.info(out)
 
                         msgObjs = []
                         #-- load into BQ unima dataset
@@ -194,35 +195,43 @@ class ImportGOCC2bq(Task.Task):
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
+                        logger.info('happy ending')
+
+    def remove_double_quote(self, dirPath, dataFNs):
+        for fn in dataFNs:
+            fpath = os.path.join(dirPath, fn) 
+            logger.info('remove double quote '+fpath)
+            #subprocess.call(["sed", "-i", 's/\"//g', fpath])
+            utility.remove_dq2space(fpath)
+        out = subprocess.check_output(["ls", "-l", dirPath])
+        logger.info(out)
+        return True
 
     def check_file_size(self, dirPath, fn):
         cnt = 0
         fpath = os.path.join(dirPath, fn) 
-        with open(fpath, 'r') as f:
-            for i, l in enumerate(f):
-                cnt = i
-        cnt = cnt + 1
-                        
-        return (True, cnt) if cnt < 10 * 1000*1000 else (False, cnt)
+        logger.info('check_file_size '+fpath)
+        out = subprocess.check_output(["wc", "-l", fpath])
+        logger.info(out)
+        cnt = int(out.split()[0])            
+        return (True, cnt) if cnt < 20 * 1000*1000 else (False, cnt)
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
             if fn.endswith('.csv') or fn.endswith('.tsv'):
-
-                fpath = os.path.join(dirPath, fn) 
-                try:
-                    with io.open(fpath, 'r', encoding='utf-8') as f :
-                        f.readlines()
-                except UnicodeDecodeError:
-                    logger.error(traceback.format_exc())
-                    return False
+                fpath = os.path.join(dirPath, fn)
+                logger.info("begin check_file_encoding "+fpath)
+                out = subprocess.check_output(["file", "-bi", fpath])
+                logger.info(out)
+                #return (out.find('utf-8') >0) 
         return True
 
     def check_num_fields(self, dirPath, dataFNs):
         for fn in dataFNs:
             if fn.endswith('.csv') or fn.endswith('.tsv'):
 
-                fpath = os.path.join(dirPath, fn) 
+                fpath = os.path.join(dirPath, fn)
+                logger.info("begin check_num_fields "+fpath) 
                 with open(fpath, 'rb') as f :
                     reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
                 
@@ -240,14 +249,20 @@ class ImportGOCC2bq(Task.Task):
         for fn in dataFNs:
             baseName = os.path.splitext(fn)[0]
             ffn = os.path.join(dirPath, fn)
-
-            utility.remove_dq2space(ffn)
+            #logger.info("begin remove_dq2space "+ffn)
+            #utility.remove_dq2space(ffn)
+            logger.info("begin remove_zero_date "+ffn)
             utility.remove_zero_datetime(ffn)
 
             if baseName.lower().endswith('goods'):
                 #-- prevent cast string to Float by BQ --autodetect
                 #   e.g. PGID: 5787509,5789667 => 5787509, 5789667
+                logger.info("begin replace_c_cs "+ffn)
                 utility.replace_c_cs(ffn)
+        
+        out = subprocess.check_output(["ls", "-l", dirPath])
+        logger.info(out)
+        return True
 
 
 if '__main__' == __name__:

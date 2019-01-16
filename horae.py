@@ -179,7 +179,7 @@ def main() :
             pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'], cb_bq.callback)
             pull_pub.pull_messages(client, EnumSubscript['pull_es-cluster'], cb_es.callback)
 
-            time.sleep(1)
+            time.sleep(3)
                 
     except KeyboardInterrupt:
         logger.info('shutdown requested, exiting... ')

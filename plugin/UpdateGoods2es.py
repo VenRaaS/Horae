@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateGoods2es(Task.Task):
-    INVOKE_INTERVAL_SEC = 600
+    INVOKE_INTERVAL_SEC = 60 * 20
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 
@@ -79,6 +79,7 @@ class UpdateGoods2es(Task.Task):
                         dataFNs = [ os.path.basename(fn) for fn in os.listdir(dataPath) if utility.basename(fn).lower().endswith('goods') ]
                         logger.info(dataFNs)
 
+                        self.remove_double_quote(dataPath, dataFNs)
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
                         if not self.check_file_encoding(dataPath, dataFNs): return
@@ -118,7 +119,8 @@ class UpdateGoods2es(Task.Task):
                             if tmpTb.endswith('goods'):
                                 cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
                                 logger.info(cmd)
-                                subprocess.call(cmd.split(' '))
+                                out = subprocess.check_output(cmd.split(' '))
+                                logger.info(out)
                                 break
  
                         #-- form with unima schema
@@ -135,7 +137,8 @@ class UpdateGoods2es(Task.Task):
                                 sql = UpdateGoods2es.SQL2UNIMA_GOODS.format(tmpDS, tmpTb)
                                 cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={}.{} {}'.format(dataset, unimaTb, sql)
                                 logger.info(cmd)
-                                subprocess.call(cmd.split(' '))
+                                out = subprocess.check_output(cmd.split(' '))
+                                logger.info(out)
                                 break
 
 #                        sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.update_goods_{}'.format(codename, codename, date)
@@ -145,13 +148,15 @@ class UpdateGoods2es(Task.Task):
                         cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sql)
 
                         logger.info(cmd)
-                        subprocess.call(cmd, shell=True)
+                        out = subprocess.check_output(cmd, shell=True)
+                        logger.info(out)
 
                         jsonGoodsFN = "{}_goods_{}.json".format(codename, date)
                         gsJsonGoodsPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder, jsonGoodsFN)
                         cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(exportTmpTb, gsJsonGoodsPath)
                         logger.info(cmd)
-                        subprocess.call(cmd, shell=True)
+                        out = subprocess.check_output(cmd, shell=True)
+                        logger.info(out)
 
                         #-- local json path
                         jsonPath = '/tmp/gocc2es_update'
@@ -174,18 +179,26 @@ class UpdateGoods2es(Task.Task):
                         cmd = 'rm -rf {}'.format(unpackPath) 
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
+                        logger.info('happy ending')  
+
+    def remove_double_quote(self, dirPath, dataFNs):
+        for fn in dataFNs:
+            fpath = os.path.join(dirPath, fn) 
+            logger.info('remove double quote '+fpath)
+            #subprocess.call(["sed", "-i", 's/"//g', fpath])
+            utility.remove_dq2space(fpath)
+        out = subprocess.check_output(["ls", "-l", dirPath])
+        logger.info(out)
+        return True
 
     def check_file_encoding(self, dirPath, dataFNs):
         for fn in dataFNs:
             if fn.endswith('.csv') or fn.endswith('.tsv'):
-
                 fpath = os.path.join(dirPath, fn) 
-                try:
-                    with io.open(fpath, 'r', encoding='utf-8') as f :
-                        f.readlines()
-                except UnicodeDecodeError:
-                    logger.error(traceback.format_exc())
-                    return False
+                logger.info('begin check_file_encoding '+fpath)
+                out = subprocess.check_output(["file", "-bi", fpath])
+                logger.info(out)
+                #return (out.find('utf-8') >0)
         return True
 
     def check_num_fields(self, dirPath, dataFNs):
@@ -210,14 +223,17 @@ class UpdateGoods2es(Task.Task):
         for fn in dataFNs:
             baseName = os.path.splitext(fn)[0]
             ffn = os.path.join(dirPath, fn)
-
-            utility.remove_dq2space(ffn)
+            #logger.info("begin remove_dq2space "+ffn)
+            #utility.remove_dq2space(ffn)
+            logger.info("begin remove_zero_datetime "+ffn)
             utility.remove_zero_datetime(ffn)
+            logger.info("begin lowercase_firstLine "+ffn)
             utility.lowercase_firstLine(ffn)
 
             if baseName.lower().endswith('goods'):
                 #-- prevent cast string to Float by BQ --autodetect
                 #   e.g. PGID: 5787509,5789667 => 5787509, 5789667
+                logger.info("begin replace_c_cs "+ffn)
                 utility.replace_c_cs(ffn)
 
 
