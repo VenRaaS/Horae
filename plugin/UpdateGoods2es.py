@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateGoods2es(Task.Task):
-    INVOKE_INTERVAL_SEC = 60 * 10
+    INVOKE_INTERVAL_SEC = 60 * 3
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 
@@ -216,6 +216,7 @@ class UpdateGoods2es(Task.Task):
                         else :
                              if len(fields) != num_fields_1st_row :
                                 logger.error("line {} => {}, num of delimiters check failed!".format(reader.line_num, len(fields)))
+                                logger.error(fields)
                                 return False
         return True
     

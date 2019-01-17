@@ -85,7 +85,7 @@ def load_plugin_modules() :
 
                 g_pluginMods[mod_name] = py_mod
 
-                logger.info("Loaded module: %s", mod_name);
+                logger.debug("Loaded module: %s", mod_name);
             except Exception as e:
                 logger.error(e, exc_info=True)
 

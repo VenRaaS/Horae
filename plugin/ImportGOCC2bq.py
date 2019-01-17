@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImportGOCC2bq(Task.Task):
-    INVOKE_INTERVAL_SEC = 60 * 20
+    INVOKE_INTERVAL_SEC = 60 * 5
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent.OBJECT_FINALIZE ]
     PUB_TOPIC = EnumTopic.bigquery
@@ -101,7 +101,7 @@ class ImportGOCC2bq(Task.Task):
                         self.remove_double_quote(dataPath, dataFNs)
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
-                        #if not self.check_file_encoding(dataPath, dataFNs): return
+                        if not self.check_file_encoding(dataPath, dataFNs): return
                         #-- data correction
                         self.dataCorrection(dataPath, dataFNs)
 
@@ -242,6 +242,7 @@ class ImportGOCC2bq(Task.Task):
                         else :
                              if len(fields) != num_fields_1st_row :
                                 logger.error("{} line {} => {}, num of delimiters check failed!".format(fpath, reader.line_num, len(fields)))
+                                logger.error(fields)
                                 return False
         return True
     
