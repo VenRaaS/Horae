@@ -98,7 +98,6 @@ class ImportGOCC2bq(Task.Task):
 
                         logger.info(dataFNs)
 
-                        self.remove_double_quote(dataPath, dataFNs)
                         #-- check file format
                         if not self.check_num_fields(dataPath, dataFNs): return
                         if not self.check_file_encoding(dataPath, dataFNs): return
@@ -197,16 +196,6 @@ class ImportGOCC2bq(Task.Task):
                         subprocess.call(cmd.split(' '))
                         logger.info('happy ending')
 
-    def remove_double_quote(self, dirPath, dataFNs):
-        for fn in dataFNs:
-            fpath = os.path.join(dirPath, fn) 
-            logger.info('remove double quote '+fpath)
-            #subprocess.call(["sed", "-i", 's/\"//g', fpath])
-            utility.remove_dq2space(fpath)
-        out = subprocess.check_output(["ls", "-l", dirPath])
-        logger.info(out)
-        return True
-
     def check_file_size(self, dirPath, fn):
         cnt = 0
         fpath = os.path.join(dirPath, fn) 
@@ -220,18 +209,32 @@ class ImportGOCC2bq(Task.Task):
         for fn in dataFNs:
             if fn.endswith('.csv') or fn.endswith('.tsv'):
                 fpath = os.path.join(dirPath, fn)
-                logger.info("begin check_file_encoding "+fpath)
-                out = subprocess.check_output(["file", "-bi", fpath])
-                logger.info(out)
-                #return (out.find('utf-8') >0) 
+                logger.info('begin check_file_encoding ' + fpath)
+
+                try:
+                    #-- check by read top 10 lines
+                    with io.open(fpath, 'r', encoding='utf-8') as f:                        
+                        for i, l in enumerate(f):                        
+                            if 10 < i:
+                                break
+                except UnicodeDecodeError:
+                    logger.error(traceback.format_exc())
+                    return False
+
+###                out = subprocess.check_output(["file", "-bi", fpath])
+###                logger.info(out)
+###                return (out.find('utf-8') >0) 
         return True
 
     def check_num_fields(self, dirPath, dataFNs):
         for fn in dataFNs:
             if fn.endswith('.csv') or fn.endswith('.tsv'):
-
                 fpath = os.path.join(dirPath, fn)
-                logger.info("begin check_num_fields "+fpath) 
+
+                logger.info('begin remove_dq2space ' + fpath)
+                utility.remove_dq2space(fpath)
+
+                logger.info('begin check_num_fields ' + fpath)
                 with open(fpath, 'rb') as f :
                     reader = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
                 
@@ -250,9 +253,7 @@ class ImportGOCC2bq(Task.Task):
         for fn in dataFNs:
             baseName = os.path.splitext(fn)[0]
             ffn = os.path.join(dirPath, fn)
-            #logger.info("begin remove_dq2space "+ffn)
-            #utility.remove_dq2space(ffn)
-            logger.info("begin remove_zero_date "+ffn)
+            logger.info("begin remove_zero_datetime " + ffn)
             utility.remove_zero_datetime(ffn)
 
             if baseName.lower().endswith('goods'):
