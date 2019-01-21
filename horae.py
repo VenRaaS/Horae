@@ -105,7 +105,7 @@ class sub_callback() :
                 eventType = hMsg.get_eventType()
 
                 #-- must inherit Task.Task
-                logger.info('%s, %s is inherited from Task.Task: %s', eventType, taskClass, hasattr(taskClass, 'isTask'))
+                logger.info('event %s try pass to %s (inherited from Task.Task: %s)', eventType, taskClass, hasattr(taskClass, 'isTask'))
                 if not hasattr(taskClass, 'isTask'): continue
                 if not taskClass.isTask: continue
                 
