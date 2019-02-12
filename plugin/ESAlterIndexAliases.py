@@ -19,14 +19,15 @@ import plugin.Task as Task
 
 
 logger = logging.getLogger(__file__)
+#logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
 
-
-class ESAlterIndexAliases(Task.Task):
+#class ESAlterIndexAliases(Task.Task):
+class ESAlterIndexAliases():
     INVOKE_INTERVAL_SEC = 60
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_es-cluster'] ]
     LISTEN_EVENTS = [ EnumEvent['CRON_SCHEDULER'] ]
     PUB_TOPIC = None
-
+    
     LB_ES_HOSTS = 'es-node-01'
 
     INDEX_CATS_2_RESERVED_DAYS = {
@@ -36,15 +37,20 @@ class ESAlterIndexAliases(Task.Task):
         'mod': 3,
     }
 
+    VALID_DIFF_RATIO = 0.95
+
     #-- ES APIs
     URL_DELETE_INDICE = 'http://{h}:9200/{idx}'
     URL_COUNT_INDICE = 'http://{h}:9200/{idx}/_count'
     URL_GLOBALTP_CHECK = 'http://{h}:9200/{idx}/tp/_search?q=category_code:GlobalTP'
+    URL_SEARCH = 'http://{h}:9200/{idx}/_search'
 
     URL_ALIASES = 'http://{h}:9200/_aliases'
     JSON_ADD_RM_ALIAS = {"actions":[{"add":{"index":"{newidx}","alias":"{ali}"}},{"remove":{"index":"{oldidx}","alias":"{ali}"}}]}
     JSON_ADD_ALIAS = {"actions":[{"add":{"index":"{idx}","alias":"{cn}_{cat}"}}]}
     JSON_ADD_ALIASES = {"actions":[{"add":{"index":"{cn}_{cat}_*","alias":"{cn}_{cat}"}}]}
+    JSON_AGG_GROUP_BY_TYPE = {"aggs":{"group_by_type":{"terms":{"field":"_type"}}},"size":0}
+
 
     def exe(self, hmsg) :
         if hmsg.get_attributes():
@@ -108,19 +114,48 @@ class ESAlterIndexAliases(Task.Task):
                                 if 1 != len(cnt_set):
                                     logger.info('{0} is under syncing and skip alias-alter this time.'.format(url))
                                     return
-                                time.sleep(10)                            
+                                time.sleep(10)
                             cnt_idx = float( cnt_set.pop() )
                             logger.info('{0} is stable with {1:,.0f} docs.'.format(url, cnt_idx))
-                            
-                            #-- check availability of GlobalTP
+
                             if 'mod' == cate:
+                                #-- check size of TP model
+                                tp_cnts = {alias_latest:None, idx_latest:None}
+                                for idx in [alias_latest, idx_latest]:
+                                    url = ESAlterIndexAliases.URL_SEARCH.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx)
+                                    resp = requests.post(url, json=ESAlterIndexAliases.JSON_AGG_GROUP_BY_TYPE)
+                                    resp_json = json.loads(resp.text)
+                                    if 'aggregations' in resp_json:
+                                        for b in resp_json['aggregations']['group_by_type']['buckets']:
+                                            if 'tp' == b['key']:
+                                                tp_cnts[idx] = float(b['doc_count'])
+                                    else:
+                                        logging.warn('unable to count types because {idx} is not found'.format(idx=idx))
+                                        continue
+                                
+                                if all( tp_cnts.values() ):
+                                    ratio = round(min(tp_cnts.values()) / max(tp_cnts.values()), 3)
+                                    if ESAlterIndexAliases.VALID_DIFF_RATIO <= ratio:
+                                        logging.info('{0} < {1}, TP ratio is valid.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
+                                    else:
+                                        logging.warn('{0} < {1} unable to alter alias due to invalid TP ratio.'.format(ratio, ESAlterIndexAliases.VALID_DIFF_RATIO))
+                                        continue
+                                else:
+                                    for k, v in tp_cnts.items():
+                                        if v is None:
+                                            msg = 'TP ratio validation error, index [{0}] is {1}'.format(k, v)
+                                            logging.warn(msg)
+                                            utility.warning2slack(codename, msg)
+                                    continue
+                            
+                                #-- check availability of GlobalTP
                                 url = ESAlterIndexAliases.URL_GLOBALTP_CHECK.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx_latest)
                                 resp = requests.get(url)
                                 if int(json.loads(resp.text)['hits']['total']) < 1:
                                     msg = 'GlobalTP is unavailable in {0}, url: {1}'.format(idx_latest, url)
                                     logger.warn(msg)
                                     utility.warning2slack(codename, msg)
-                                    return
+                                    continue
                                 else:
                                     msg = 'GlobalTP is available in {0}, hits.total: {1}'.format(idx_latest, json.loads(resp.text)['hits']['total'])
                                     logger.info(msg)
@@ -129,8 +164,8 @@ class ESAlterIndexAliases(Task.Task):
                             resp = requests.get(url)
                             cnt_alias = float(json.loads(resp.text)['count'])
                             ratio = min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias)
-                            if 0.98 <= min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias):
-                                logging.info('0.98 < {0}, valid ratio.'.format(ratio))
+                            if ESAlterIndexAliases.VALID_DIFF_RATIO <= min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias):
+                                logging.info('{0} < {1}, valid ratio.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
                                 # json command
                                 ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['index'] = idx_latest
                                 ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['alias'] = alias 
@@ -184,3 +219,11 @@ class ESAlterIndexAliases(Task.Task):
             indices.sort()
 
         return (indices, iaInfoJson)
+
+
+
+
+if '__main__' == __name__:
+   aa =  ESAlterIndexAliases()
+   aa.exe()
+
