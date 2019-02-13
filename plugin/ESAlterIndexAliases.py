@@ -21,8 +21,7 @@ import plugin.Task as Task
 logger = logging.getLogger(__file__)
 #logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
 
-#class ESAlterIndexAliases(Task.Task):
-class ESAlterIndexAliases():
+class ESAlterIndexAliases(Task.Task):
     INVOKE_INTERVAL_SEC = 60
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_es-cluster'] ]
     LISTEN_EVENTS = [ EnumEvent['CRON_SCHEDULER'] ]
@@ -69,7 +68,7 @@ class ESAlterIndexAliases():
 
                     indices, iaInfoJson = self.get_sorted_indices(alias)
                     if len(indices) <= 0:
-                        logging.warn('none of indices with prefix {0}'.format(alias))
+                        logger.warn('none of indices with prefix {0}'.format(alias))
                         continue
 
                     #-- the latest index
@@ -87,23 +86,23 @@ class ESAlterIndexAliases():
                             ESAlterIndexAliases.JSON_ADD_ALIASES['actions'][0]['add']['alias'] = '{cn}_{cat}'.format(cn=codename, cat=cate)
                             url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
                             resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_ALIASES)
-                            logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIASES, resp.text))
+                            logger.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIASES, resp.text))
                         else:
-                            logging.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
+                            logger.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                     elif cate in ['mod', 'gocc']:
                         if None == alias_latest:
                             # newborn, none alias yet
-                            logging.info('newborn, none alias yet')
-                            logging.info('let\'s alias the latest one {0} ...'.format(idx_latest))
+                            logger.info('newborn, none alias yet')
+                            logger.info('let\'s alias the latest one {0} ...'.format(idx_latest))
                             ESAlterIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['index'] = idx_latest
                             ESAlterIndexAliases.JSON_ADD_ALIAS['actions'][0]['add']['alias'] = alias
                             url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
                             resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_ALIAS)
-                            logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIAS, resp.text))
+                            logger.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_ALIAS, resp.text))
                         elif alias_latest != idx_latest:
                             # the lastest alias != the latest index
-                            logging.info('{0}(idx) <> {1}(alias), latest indices is not equal'.format(idx_latest, alias_latest))
-                            logging.info('let\'s sync the alias to the latest index ...')
+                            logger.info('{0}(idx) <> {1}(alias), latest indices is not equal'.format(idx_latest, alias_latest))
+                            logger.info('let\'s sync the alias to the latest index ...')
 
                             #-- check whether the number of docs is stable
                             cnt_set = set()
@@ -130,21 +129,21 @@ class ESAlterIndexAliases():
                                             if 'tp' == b['key']:
                                                 tp_cnts[idx] = float(b['doc_count'])
                                     else:
-                                        logging.warn('unable to count types because {idx} is not found'.format(idx=idx))
+                                        logger.warn('unable to count types because {idx} is not found'.format(idx=idx))
                                         continue
                                 
                                 if all( tp_cnts.values() ):
                                     ratio = round(min(tp_cnts.values()) / max(tp_cnts.values()), 3)
                                     if ESAlterIndexAliases.VALID_DIFF_RATIO <= ratio:
-                                        logging.info('{0} < {1}, TP ratio is valid.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
+                                        logger.info('{0} < {1}, TP ratio is valid.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
                                     else:
-                                        logging.warn('{0} < {1} unable to alter alias due to invalid TP ratio.'.format(ratio, ESAlterIndexAliases.VALID_DIFF_RATIO))
+                                        logger.warn('{0} < {1} unable to alter alias due to invalid TP ratio.'.format(ratio, ESAlterIndexAliases.VALID_DIFF_RATIO))
                                         continue
                                 else:
                                     for k, v in tp_cnts.items():
                                         if v is None:
                                             msg = 'TP ratio validation error, index [{0}] is {1}'.format(k, v)
-                                            logging.warn(msg)
+                                            logger.warn(msg)
                                             utility.warning2slack(codename, msg)
                                     continue
                             
@@ -165,7 +164,7 @@ class ESAlterIndexAliases():
                             cnt_alias = float(json.loads(resp.text)['count'])
                             ratio = min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias)
                             if ESAlterIndexAliases.VALID_DIFF_RATIO <= min(cnt_idx,cnt_alias) / max(cnt_idx,cnt_alias):
-                                logging.info('{0} < {1}, valid ratio.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
+                                logger.info('{0} < {1}, valid ratio.'.format(ESAlterIndexAliases.VALID_DIFF_RATIO, ratio))
                                 # json command
                                 ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['index'] = idx_latest
                                 ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][0]['add']['alias'] = alias 
@@ -173,17 +172,17 @@ class ESAlterIndexAliases():
                                 ESAlterIndexAliases.JSON_ADD_RM_ALIAS['actions'][1]['remove']['alias'] = alias
                                 url = ESAlterIndexAliases.URL_ALIASES.format(h=ESAlterIndexAliases.LB_ES_HOSTS)
                                 resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_RM_ALIAS)
-                                logging.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_RM_ALIAS, resp.text))
+                                logger.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_RM_ALIAS, resp.text))
                             else:
-                                logging.warn('{0}/{1}= {2} < 0.98 unable to alter alias due to invalid ratio.'.format( \
+                                logger.warn('{0}/{1}= {2} < 0.98 unable to alter alias due to invalid ratio.'.format( \
                                     min(cnt_idx,cnt_alias), max(cnt_idx,cnt_alias), ratio))
                         else:
-                            logging.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
+                            logger.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                     
                     #-- purge indices
                     indices, iaInfoJson = self.get_sorted_indices(alias)
                     if len(indices) <= 0:
-                        logging.warn('none of indices with prefix {0}'.format(alias))
+                        logger.warn('none of indices with prefix {0}'.format(alias))
                         continue
                     
                     indices_aliasbeg = []
@@ -194,7 +193,7 @@ class ESAlterIndexAliases():
 
                     revdays = ESAlterIndexAliases.INDEX_CATS_2_RESERVED_DAYS[cate]
                     if len(indices_aliasbeg) <= revdays:
-                        logging.info('[{0}] has {1} indices and the latest alias on [{2}], <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
+                        logger.info('[{0}] has {1} indices and the latest alias on [{2}], <= {3}, which does not need to purge yet.'.format(alias, len(indices_aliasbeg), indices_aliasbeg[0], revdays))
                     else:
                         idx_end = revdays - len(indices_aliasbeg)
 #                       ymd = idx_latest.split('_')[-1]
@@ -203,7 +202,7 @@ class ESAlterIndexAliases():
                         for idx in indices_aliasbeg[idx_end: ] :
                             urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx)
                             resp = requests.delete(urldel)
-                            logging.info('delete {0}, {1}'.format(urldel, resp.text))
+                            logger.info('delete {0}, {1}'.format(urldel, resp.text))
 
 
     def get_sorted_indices(self, alias, sort_decending=True):
