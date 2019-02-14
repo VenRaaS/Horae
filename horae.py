@@ -111,6 +111,7 @@ class sub_callback() :
                 
                 #-- math Subscription and eventType between message and plugin class (taskClass)
                 if not self.subscript in taskClass.LISTEN_SUBSCRIPTS: continue
+                if not eventType in EnumEvent.__members__: continue
                 if not eventType or not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
 
                 k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
