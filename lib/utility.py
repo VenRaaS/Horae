@@ -38,7 +38,7 @@ def has_header(ffn):
         row1 = next(reader)
         return not any(c.isdigit() for c in row1)
 
-def list_all_topics(client) :
+def list_all_topics(client):
     topics = []
 
     next_page_token = None
@@ -83,7 +83,6 @@ def warning2slack(codename, msg):
     resp = requests.post(url_slackwebhook, json = j)
     return resp
         
-
 def remove_dq2space(ffn):
     cmd = "sed -i 's/\"/ /g' {}".format(ffn)
     logger.info(cmd)

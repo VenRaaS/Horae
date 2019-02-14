@@ -7,6 +7,7 @@ import sys
 import subprocess
 import logging
 import time
+import urllib
 from datetime import datetime, timedelta
 
 import requests
@@ -18,8 +19,9 @@ import lib.utility as utility
 import plugin.Task as Task
 
 
-logger = logging.getLogger(__file__)
 #logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+logger = logging.getLogger(__file__)
+
 
 class ESAlterIndexAliases(Task.Task):
     INVOKE_INTERVAL_SEC = 60
@@ -39,7 +41,8 @@ class ESAlterIndexAliases(Task.Task):
     VALID_DIFF_RATIO = 0.95
 
     #-- ES APIs
-    URL_DELETE_INDICE = 'http://{h}:9200/{idx}'
+    URL_HOSTPORT = 'http://{h}:9200'.format(h=LB_ES_HOSTS)
+    URL_DELETE_INDICE = URL_HOSTPORT + '/{idx}'
     URL_COUNT_INDICE = 'http://{h}:9200/{idx}/_count'
     URL_GLOBALTP_CHECK = 'http://{h}:9200/{idx}/tp/_search?q=category_code:GlobalTP'
     URL_SEARCH = 'http://{h}:9200/{idx}/_search'
@@ -179,7 +182,7 @@ class ESAlterIndexAliases(Task.Task):
                         else:
                             logger.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                     
-                    #-- purge indices
+                    #-- purge outdated indices
                     indices, iaInfoJson = self.get_sorted_indices(alias)
                     if len(indices) <= 0:
                         logger.warn('none of indices with prefix {0}'.format(alias))
@@ -203,7 +206,17 @@ class ESAlterIndexAliases(Task.Task):
                             urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(h=ESAlterIndexAliases.LB_ES_HOSTS, idx=idx)
                             resp = requests.delete(urldel)
                             logger.info('delete {0}, {1}'.format(urldel, resp.text))
-
+                
+                #-- purge unknown indices
+                all_indices = self.list_all_indices(ESAlterIndexAliases.URL_HOSTPORT)                
+                codenames = self.list_all_codenames(ESAlterIndexAliases.URL_HOSTPORT)
+                codenames.append('venraas')
+                # indices whose prefix does not start with $codename or venraas
+                unknownIndices = filter(lambda idx: not any([ idx.startswith(c) for c in codenames ]), all_indices)
+                for idx in unknownIndices:                    
+                    urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(idx=urllib.quote_plus(idx))
+                    resp = requests.delete(urldel)
+                    logger.info('delete unknown index: {0}, {1}'.format(urldel, resp.text))
 
     def get_sorted_indices(self, alias, sort_decending=True):
         indices = []
@@ -218,6 +231,33 @@ class ESAlterIndexAliases(Task.Task):
             indices.sort()
 
         return (indices, iaInfoJson)
+
+    def list_all_indices(self, h):
+        rs =[]
+
+        url = '{h}/_cat/indices?v'.format(h=h)
+        try:
+            resp = requests.get(url, timeout=2)
+            csv_reader = csv.DictReader(resp.text.split('\n'), delimiter=' ', skipinitialspace=True)     
+            rs = [ l['index'] for l in csv_reader ]
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            
+        return rs
+
+    def list_all_codenames(self, h):
+        rs =[]
+
+        url = '{h}/venraas/com_pkgs/_search?sort=update_dt:desc&size=1'.format(h=h)
+        try:
+            resp = requests.get(url, timeout=2)
+            coms_json = json.loads(resp.text)
+            coms = coms_json['hits']['hits'][0]['_source']['companies']
+            rs = [ c['code_name'] for c in coms ]
+        except Exception as e:
+            logger.error(e, exc_info=True)
+
+        return rs
 
 
 
