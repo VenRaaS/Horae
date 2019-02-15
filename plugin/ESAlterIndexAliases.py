@@ -177,8 +177,8 @@ class ESAlterIndexAliases(Task.Task):
                                 resp = requests.post(url, json=ESAlterIndexAliases.JSON_ADD_RM_ALIAS)
                                 logger.info('{0} --data {1}, {2}'.format(url, ESAlterIndexAliases.JSON_ADD_RM_ALIAS, resp.text))
                             else:
-                                logger.warn('{0}/{1}= {2} < 0.98 unable to alter alias due to invalid ratio.'.format( \
-                                    min(cnt_idx,cnt_alias), max(cnt_idx,cnt_alias), ratio))
+                                logger.warn('{0}/{1}= {2} < 0.98 unable to alter alias [{3}] due to invalid ratio.'.format( \
+                                    min(cnt_idx,cnt_alias), max(cnt_idx,cnt_alias), ratio, alias))
                         else:
                             logger.info('{0}(idx) = {1}(alias), latest indices are equal, awesome +1'.format(idx_latest, alias_latest))
                     
