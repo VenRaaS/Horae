@@ -25,9 +25,9 @@ class UpdateGoods2es(Task.Task):
 
     HEADER_GOODS = 'GID	PGID	GOODS_NAME	GOODS_KEYWORD	GOODS_BRAND	GOODS_DESCRIBE	GOODS_SPEC	GOODS_IMG_URL	AVAILABILITY	CURRENCY	SALE_PRICE	PROVIDER	BARCODE_EAN13	BARCODE_UPC	FIRST_RTS_DATE	UPDATE_TIME'
 
-    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {}.{}'
+    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {ds}.{tb}'
     
-    SQL_FROM_EXPORT = 'SELECT \'{}\' as code_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {}_tmp.update_goods_{}'
+    SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
 
 
     def exe(self, hmsg) :
@@ -52,6 +52,7 @@ class UpdateGoods2es(Task.Task):
                     #-- valid file name 
                     if m :
                         date = m.group(1)
+                        time = datetime.datetime.now().strftime('%H%M')
 
                         folder = '_'.join([bucketId, 'gocc', 'update', date])
                         unpackPath = os.path.join('/tmp', folder)
@@ -114,10 +115,10 @@ class UpdateGoods2es(Task.Task):
                             baseName = os.path.splitext(fn)[0]
 
                             dataset = '{}_tmp'.format(codename)
-                            tmpTb = 'update_ext_{}'.format(baseName.lower())
+                            extTb = 'update_ext_{}'.format(baseName.lower())
 
-                            if tmpTb.endswith('goods'):
-                                cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
+                            if extTb.endswith('goods'):
+                                cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, extTb, gsPath)
                                 logger.info(cmd)
                                 out = subprocess.check_output(cmd.split(' '))
                                 logger.info(out)
@@ -127,36 +128,38 @@ class UpdateGoods2es(Task.Task):
                         for fn in dataFNs:
                             tmpDS = '{}_tmp'.format(codename)
                             baseName = os.path.splitext(fn)[0]
-                            tmpTb = 'update_ext_{}'.format(baseName.lower())
-                            logger.info(tmpTb)
+                            extTb = 'update_ext_{}'.format(baseName.lower())
+                            logger.info(extTb)
 
                             dataset = '{}_tmp'.format(codename)
-                            unimaTb = 'update_{}_{}'.format(baseName.lower(), date)
+                            unimaTb = 'update_{name}'.format(name=baseName.lower())
 
-                            if tmpTb.endswith('goods'):
-                                sql = UpdateGoods2es.SQL2UNIMA_GOODS.format(tmpDS, tmpTb)
+                            if extTb.endswith('goods'):
+                                sql = UpdateGoods2es.SQL2UNIMA_GOODS.format(ds=tmpDS, tb=extTb)
                                 cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={}.{} {}'.format(dataset, unimaTb, sql)
                                 logger.info(cmd)
                                 out = subprocess.check_output(cmd.split(' '))
                                 logger.info(out)
+
+                                exportTmpTb = '{cn}_tmp.update_export_goods_{d}{t}'.format(cn=codename, d=date, t=time)
+                                sql = UpdateGoods2es.SQL_FORM_EXPORT_GOODS.format(cn=codename, ds=tmpDS, tb=unimaTb)
+                                cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sql)
+                                logger.info(cmd)
+                                out = subprocess.check_output(cmd, shell=True)
+                                logger.info(out)
+                                cmd = 'bq update --expiration 259200 {tb}'.format(tb=exportTmpTb)
+                                logger.info(cmd)
+                                out = subprocess.check_output(cmd, shell=True)
+                                logger.info(out)
+
+                                jsonGoodsFN = "{}_goods_{}.json".format(codename, date)
+                                gsJsonGoodsPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder, jsonGoodsFN)
+                                cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(exportTmpTb, gsJsonGoodsPath)
+                                logger.info(cmd)
+                                out = subprocess.check_output(cmd, shell=True)
+                                logger.info(out)
                                 break
 
-#                        sqlBQ = 'SELECT \'{}\' as code_name ,gid, pgid, goods_name, goods_keyword, goods_brand, goods_describe, goods_spec, goods_img_url, goods_page_url, availability, currency, sale_price, provider, barcode_ean13, barcode_upc, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {}_tmp.update_goods_{}'.format(codename, codename, date)
-
-                        exportTmpTb = '{}_tmp.update_export_goods_{}'.format(codename, date)
-                        sql = UpdateGoods2es.SQL_FROM_EXPORT.format(codename, codename, date)
-                        cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sql)
-
-                        logger.info(cmd)
-                        out = subprocess.check_output(cmd, shell=True)
-                        logger.info(out)
-
-                        jsonGoodsFN = "{}_goods_{}.json".format(codename, date)
-                        gsJsonGoodsPath = os.path.join('gs://', bucketId, 'tmp', gsTmpFolder, jsonGoodsFN)
-                        cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(exportTmpTb, gsJsonGoodsPath)
-                        logger.info(cmd)
-                        out = subprocess.check_output(cmd, shell=True)
-                        logger.info(out)
 
                         #-- local json path
                         jsonPath = '/tmp/gocc2es_update'
