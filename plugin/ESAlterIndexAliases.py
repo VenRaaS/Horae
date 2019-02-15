@@ -78,7 +78,7 @@ class ESAlterIndexAliases(Task.Task):
                     idx_latest = indices[0]
 
                     #-- find the latest Aliased index
-                    #   iaInfoJson, e.g. {"$CN_gocc_20181107":{"aliases":{"$CN_gocc":{}}}, "pchome_gocc_20181105":{"aliases":{}}, ...}
+                    #   iaInfoJson, e.g. {"$CN_gocc_20181107":{"aliases":{"$CN_gocc":{}}}, "$CN_gocc_20181105":{"aliases":{}}, ...}
                     alias_latest = next((i for i in indices if alias in iaInfoJson[i]['aliases']), None)
 
                     #-- alter aliases
