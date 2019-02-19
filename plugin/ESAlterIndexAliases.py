@@ -214,7 +214,7 @@ class ESAlterIndexAliases(Task.Task):
                 # indices whose prefix does not start with $codename or venraas
                 unknownIndices = filter(lambda idx: not any([ idx.startswith(c) for c in codenames ]), all_indices)
                 for idx in unknownIndices:                    
-                    urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(idx=urllib.quote_plus(idx))
+                    urldel = ESAlterIndexAliases.URL_DELETE_INDICE.format(idx=urllib.quote_plus(idx.encode('utf8')))
                     resp = requests.delete(urldel)
                     logger.info('delete unknown index: {0}, {1}'.format(urldel, resp.text))
 
@@ -238,8 +238,9 @@ class ESAlterIndexAliases(Task.Task):
         url = '{h}/_cat/indices?v'.format(h=h)
         try:
             resp = requests.get(url, timeout=2)
-            csv_reader = csv.DictReader(resp.text.split('\n'), delimiter=' ', skipinitialspace=True)     
-            rs = [ l['index'] for l in csv_reader ]
+            text = resp.text.encode('utf8')
+            csv_reader = csv.DictReader(text.split('\n'), delimiter=' ', skipinitialspace=True)
+            rs = [ l['index'].decode('utf8') for l in csv_reader ]
         except Exception as e:
             logger.error(e, exc_info=True)
             
