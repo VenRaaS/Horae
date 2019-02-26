@@ -26,13 +26,15 @@ class ImportGOCC2ms(Task.Task):
     INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bigquery'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
-    PUB_TOPIC = EnumTopic['es-cluster']
+    PUB_TOPIC = EnumTopic['ms-cluster']
 
     SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name,"goods" as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
     
     SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, "category" as table_name,  SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
 
     URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
+
+    PATH_JSON2MSPY = '/home/itri/memstore-client/json2ms.py'
 
 
     def exe(self, hmsg) :
@@ -119,12 +121,14 @@ class ImportGOCC2ms(Task.Task):
                     cmd = 'cat {} >> {}'.format(lowerkeyFP , jsonFP)
                     logger.info(cmd)
                     subprocess.call(cmd, shell=True)
-                     
-                
-                #-- suspend until data sync to ES via logstash
-                url = ImportGOCC2ms.URL_ES_GOCC_COUNT.format(codename, gocc_date)
-                logger.info(url)
-                utility.returnOnlyIfCountStable_es(url)
+
+                    if srcTb.startswith('goods_'):
+                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -lv -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY', fn=jsonFP)
+                    elif srcTb.startswith('category_'):
+                        cmd  = 'python {py} -k category_code -v category_code -v le -v category_code -v p_category_code -v update_time -lk -lv -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                    logger.info(cmd)
+                    subprocess.call(cmd, shell=True)
+
 
                 if gocc_date:
                     obj = '{}_gocc_{}'.format(codename, gocc_date)
@@ -137,15 +141,7 @@ class ImportGOCC2ms(Task.Task):
                     hmsg.set_objectIds(msgObjs)
                     logger.info(hmsg)
                     self.pub_message(ImportGOCC2ms.PUB_TOPIC, [hmsg])
-            
  
-###                    #-- copy to local
-###                    #-- >, arrow to trigger file change detection of logstash
-###                    jsonPath = os.path.join(jsonPath, jsonGoodsFN)
-###                    cmd = 'gsutil cat {} > {}'.format(gsJsonGoodsPath, jsonPath)
-###                    logger.info(cmd)
-###                    subprocess.call(cmd, shell=True)
-###
 
 if '__main__' == __name__:
     hmsg = HMessage()
