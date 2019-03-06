@@ -28,9 +28,9 @@ class ImportGOCC2ms(Task.Task):
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic['ms-cluster']
 
-    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name,"goods" as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
+    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
     
-    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, "category" as table_name,  SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
+    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, \'category\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
 
     URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
 
@@ -123,9 +123,9 @@ class ImportGOCC2ms(Task.Task):
                     subprocess.call(cmd, shell=True)
 
                     if srcTb.startswith('goods_'):
-                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -lv -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     elif srcTb.startswith('category_'):
-                        cmd  = 'python {py} -k category_code -v category_code -v le -v category_code -v p_category_code -v update_time -lk -lv -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                        cmd = 'python {py} -k category_code -v category_code -v le -v category_code -v p_category_code -v update_time -lk -ttl 15552000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     logger.info(cmd)
                     subprocess.call(cmd, shell=True)
 
