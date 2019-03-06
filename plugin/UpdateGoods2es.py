@@ -27,8 +27,9 @@ class UpdateGoods2es(Task.Task):
 
     SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {ds}.{tb}'
     
-    SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
+    SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
 
+    PATH_JSON2MSPY = '/home/itri/memstore-client/json2ms.py'
 
     def exe(self, hmsg) :
         if hmsg.get_attributes() :
@@ -171,6 +172,11 @@ class UpdateGoods2es(Task.Task):
                         #-- >, arrow to trigger file change detection of logstash
                         jsonPath = os.path.join(jsonPath, jsonGoodsFN)
                         cmd = 'gsutil cat {} > {}'.format(gsJsonGoodsPath, jsonPath)
+                        logger.info(cmd)
+                        subprocess.call(cmd, shell=True)
+
+                        #-- push to MS
+                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -ttl 15552000 "{fn}" update_goods pipe'.format(py=UpdateGoods2es.PATH_JSON2MSPY, fn=jsonPath)
                         logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
