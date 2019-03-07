@@ -18,7 +18,7 @@ import lib.utility as utility
 logger = logging.getLogger(__name__)
 
 
-class UpdateGoods2es(Task.Task):
+class UpdateGoods2xs(Task.Task):
     INVOKE_INTERVAL_SEC = 60 * 3
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
@@ -30,6 +30,7 @@ class UpdateGoods2es(Task.Task):
     SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
 
     PATH_JSON2MSPY = '/home/itri/memstore-client/json2ms.py'
+    LOCAL_PATH_JSON = '/tmp/gocc2xs_update'
 
     def exe(self, hmsg) :
         if hmsg.get_attributes() :
@@ -97,7 +98,7 @@ class UpdateGoods2es(Task.Task):
                             if not utility.has_header(ffn):
                                 cmd = "sed -i '1s/^/{}\\n/' {}"
                                 if ffn.endswith('Goods.tsv'): 
-                                    cmd = cmd.format(UpdateGoods2es.HEADER_GOODS, ffn)
+                                    cmd = cmd.format(UpdateGoods2xs.HEADER_GOODS, ffn)
 
                                 logger.info(cmd)
                                 subprocess.call([cmd], shell=True)
@@ -136,14 +137,14 @@ class UpdateGoods2es(Task.Task):
                             unimaTb = 'update_{name}'.format(name=baseName.lower())
 
                             if extTb.endswith('goods'):
-                                sql = UpdateGoods2es.SQL2UNIMA_GOODS.format(ds=tmpDS, tb=extTb)
+                                sql = UpdateGoods2xs.SQL2UNIMA_GOODS.format(ds=tmpDS, tb=extTb)
                                 cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={}.{} {}'.format(dataset, unimaTb, sql)
                                 logger.info(cmd)
                                 out = subprocess.check_output(cmd.split(' '))
                                 logger.info(out)
 
                                 exportTmpTb = '{cn}_tmp.update_export_goods_{d}{t}'.format(cn=codename, d=date, t=time)
-                                sql = UpdateGoods2es.SQL_FORM_EXPORT_GOODS.format(cn=codename, ds=tmpDS, tb=unimaTb)
+                                sql = UpdateGoods2xs.SQL_FORM_EXPORT_GOODS.format(cn=codename, ds=tmpDS, tb=unimaTb)
                                 cmd = 'bq query -n 0 --nouse_legacy_sql --replace --destination_table=\"{}\" \"{}\"'.format(exportTmpTb, sql)
                                 logger.info(cmd)
                                 out = subprocess.check_output(cmd, shell=True)
@@ -163,7 +164,7 @@ class UpdateGoods2es(Task.Task):
 
 
                         #-- local json path
-                        jsonPath = '/tmp/gocc2es_update'
+                        jsonPath = UpdateGoods2xs.LOCAL_PATH_JSON
                         cmd = 'mkdir -p {}'.format(jsonPath)
                         logger.info(cmd)
                         subprocess.call(cmd.split(' '))
@@ -176,7 +177,7 @@ class UpdateGoods2es(Task.Task):
                         subprocess.call(cmd, shell=True)
 
                         #-- push to MS
-                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -ttl 15552000 "{fn}" update_goods pipe'.format(py=UpdateGoods2es.PATH_JSON2MSPY, fn=jsonPath)
+                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -ttl 15552000 "{fn}" update_goods pipe'.format(py=UpdateGoods2xs.PATH_JSON2MSPY, fn=jsonPath)
                         logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
