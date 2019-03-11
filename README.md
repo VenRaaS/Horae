@@ -18,6 +18,7 @@ Here is an overview of the Horae framework and how the interaction between messa
 * [bucket_ven-custs](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
 * [bigquery](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
 * [es-cluster](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
+* [ms-cluster](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
 
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
 ```
