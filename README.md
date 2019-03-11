@@ -2,7 +2,7 @@
 
 ## Overview
 In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to pass the message/status between modules.  
-Please check belows for more detail about PubSub.
+Please check the following materials for more detail.
 * [Pub/Sub concepts and message flow](https://cloud.google.com/pubsub/docs/overview#concepts)
 * [https://cloud.google.com/pubsub/docs/subscriber](https://cloud.google.com/pubsub/docs/subscriber)
 
