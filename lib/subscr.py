@@ -6,5 +6,5 @@ from enum import Enum
 #       https://stackoverflow.com/questions/36932/how-can-i-represent-an-enum-in-python?page=1&tab=votes#tab-top
 
 ##-- each Enum element is seprated by a SPACE
-EnumSubscript = Enum('EnumSubscript', 'pull_bucket_ven-custs pull_bigquery pull_es-cluster')
+EnumSubscript = Enum('EnumSubscript', 'pull_bucket_ven-custs pull_bigquery pull_es-cluster pull_ms-cluster')
 

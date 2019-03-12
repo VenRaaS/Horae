@@ -2,3 +2,5 @@ google-api-python-client
 google-cloud-pubsub
 oauth2client
 enum34
+redis
+

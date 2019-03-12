@@ -176,9 +176,11 @@ def main() :
             cb_bk = sub_callback(EnumSubscript['pull_bucket_ven-custs'])
             cb_bq = sub_callback(EnumSubscript['pull_bigquery'])
             cb_es = sub_callback(EnumSubscript['pull_es-cluster'])
+            cb_ms = sub_callback(EnumSubscript['pull_ms-cluster'])
             pull_pub.pull_messages(client, EnumSubscript['pull_bucket_ven-custs'], cb_bk.callback)
             pull_pub.pull_messages(client, EnumSubscript['pull_bigquery'], cb_bq.callback)
             pull_pub.pull_messages(client, EnumSubscript['pull_es-cluster'], cb_es.callback)
+            pull_pub.pull_messages(client, EnumSubscript['pull_ms-cluster'], cb_ms.callback)
 
             time.sleep(3)
                 
