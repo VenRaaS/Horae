@@ -18,11 +18,9 @@ Here is an overview of the Horae framework and how the interaction between messa
 * [Applying notification to a bucket with gsutil](https://github.com/VenRaaS/Horae/wiki/Sync-GOCC-to-BigQuery-and-ES-via-Pub-Sub-Notifications-with-Cloud-Storage#applying-notification-to-a-bucket-with-gsutil)
 
 
-## [Topics](https://cloud.google.com/pubsub/docs/admin#managing_topics)
-* [bucket_ven-custs](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
-* [bigquery](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
-* [es-cluster](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
-* [ms-cluster](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py#L8)
+## [Topics and Subscriptions](https://cloud.google.com/pubsub/docs/admin)
+* [topic.py](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
+* [subscr.py](https://github.com/VenRaaS/Horae/blob/master/lib/subscr.py)
 
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
 ```
