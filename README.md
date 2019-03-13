@@ -22,6 +22,8 @@ Here is an overview of the Horae framework and how the interaction between messa
 * [topic.py](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
 * [subscr.py](https://github.com/VenRaaS/Horae/blob/master/lib/subscr.py)
 
+TODO ... modules with message flow 
+
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
 ```
 "message":{  
