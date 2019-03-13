@@ -31,9 +31,11 @@ TODO ... modules with message flow
         "bucketId":"ven-cust-sohappy",
         "eventType":"OBJECT_FINALIZE",
         "objectId":"tmp/sohappy_gocc_20170231.tar.gz",
-...        
+...
 ```
 
+## sub_callback and plugin modules
+TODO ...
 
 ## Reference
 * [Google API Client Libraries](https://github.com/google/google-api-python-client)
