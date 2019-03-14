@@ -30,7 +30,7 @@ rds = redis.StrictRedis(host=HOST_RDS, port=6379, socket_connect_timeout=TIMEOUT
 
 
 class MSAlterDateAliases(Task.Task):
-    INVOKE_INTERVAL_SEC = 1800
+    INVOKE_INTERVAL_SEC = 600
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_ms-cluster'] ]
     LISTEN_EVENTS = [ EnumEvent['CRON_SCHEDULER'] ]
     PUB_TOPIC = None
@@ -47,10 +47,10 @@ class MSAlterDateAliases(Task.Task):
             
             if EnumEvent[event_type] in MSAlterDateAliases.LISTEN_EVENTS:
                 objectIds = hmsg.get_objectIds()
-                codename = hmsg.get_codename()
+                code_name = hmsg.get_codename()
 
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
-                logger.info('%s %s %s %s', codename, event_type, objectIds, generation)
+                logger.info('%s %s %s %s', code_name, event_type, objectIds, generation)
 
                 #-- get latest DATE from patterned keys
                 date_latest = None
@@ -72,19 +72,19 @@ class MSAlterDateAliases(Task.Task):
                 date_latest = sorted_dates[0]
                 logger.info('latest DATE of keys: {d}'.format(d=date_latest))
                 
-                key2cnt_latest = self.key2count_GroupByKeyPrefix(codename, date_latest)
+                key2cnt_latest = self.key2count_GroupByKeyPrefix(code_name, date_latest)
                 for k, v in sorted(key2cnt_latest.iteritems()):
                     logger.info('{key}: {cnt:,} '.format(key=k, cnt=v))
                  
-                date_alias = self.getDateAlias(codename)
+                date_alias = self.getDateAlias(code_name)
                 if not date_alias:
-                    self.alter_dateAlias(codename, date_latest)
+                    self.alter_dateAlias(code_name, date_latest)
                 else:
                     if date_alias != date_latest:
                         logger.info('current aliae DATE {da} != latest DATE {dl}'.format(da=date_alias, dl=date_latest))
 
                         areAllValidRatios = True
-                        key2cnt_alias = self.key2count_GroupByKeyPrefix(codename, date_alias)
+                        key2cnt_alias = self.key2count_GroupByKeyPrefix(code_name, date_alias)
                         for k, v in sorted(key2cnt_alias.iteritems()):
                             k_latest = k.replace(date_alias, date_latest)
                             if k_latest in key2cnt_latest:
@@ -101,16 +101,16 @@ class MSAlterDateAliases(Task.Task):
                                     areAllValidRatios = False
                                     break
                             else:
-                                logger.warn('key: {k} is not founded.'.format(k=k_latest))
+                                logger.warn('unable to alter DATE alias due to key: {k} is not founded.'.format(k=k_latest))
                                 areAllValidRatios = False
                                 break
 
                         if areAllValidRatios: 
-                            self.alter_dateAlias(codename, date_latest)
+                            self.alter_dateAlias(code_name, date_latest)
                     else: 
                         logger.info('alias DATE {da} == latest DATE {dl}, nothing to do.'.format(da=date_alias, dl=date_latest))
 
-                date_alias = self.getDateAlias(codename)
+                date_alias = self.getDateAlias(code_name)
 
                 #-- remove legacy DATE patterned keys
                 logger.info('now Date alias: {d}'.format(d=date_alias))
@@ -126,12 +126,12 @@ class MSAlterDateAliases(Task.Task):
                         if i <= idx_alias:
                             continue
 
-                    self.del_datePatternedKeys(codename, d)
+                    self.del_datePatternedKeys(code_name, d)
 
 
-    def alter_dateAlias(self, codename, date):
-        k = MSAlterDateAliases.KEY_ALIASES_DATE.format(cn=codename)
-        date_alias_obj = {'code_name': codename, 'aliases_date': date}
+    def alter_dateAlias(self, code_name, date):
+        k = MSAlterDateAliases.KEY_ALIASES_DATE.format(cn=code_name)
+        date_alias_obj = {'code_name': code_name, 'aliases_date': date}
         v = json.dumps(date_alias_obj, separators=(',', ':'))
         rds.lpush(k, v)
         rds.ltrim(k, 0, 0)
@@ -181,7 +181,11 @@ class MSAlterDateAliases(Task.Task):
                 rds.delete(*keys)
                 keys = []
         rds.delete(*keys)
-        logging.info('deleted keys which are prefixed as follows: {k2c}'.format(k2c=key2cnt))
+
+        logging.info('deleted keys which are prefixed as follows ...')
+        for k, v in sorted(key2cnt.iteritems()):
+            logger.info('{key}: {cnt:,} was deleted'.format(key=k, cnt=v))
+
 
 
 if '__main__' == __name__:
