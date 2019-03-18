@@ -22,7 +22,10 @@ Here is an overview of the Horae framework and how the interaction between messa
 * [topic.py](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
 * [subscr.py](https://github.com/VenRaaS/Horae/blob/master/lib/subscr.py)
 
-TODO ... modules with message flow 
+## [Topics and plugins process order]
+The Red line stands for GOCC upload/update message and task processing flow and Green line stands for key alias (date) processing flow.
+
+![](https://drive.google.com/uc?id=1mar6oKZTKcbmrNf5DRo0xLe0E64sMIrY)
 
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
 ```
