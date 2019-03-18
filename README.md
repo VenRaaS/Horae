@@ -22,7 +22,7 @@ Here is an overview of the Horae framework and how the interaction between messa
 * [topic.py](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
 * [subscr.py](https://github.com/VenRaaS/Horae/blob/master/lib/subscr.py)
 
-## [Topics and plugins process order]
+## Topics and plugins process order
 * The Red line stands for GOCC upload/update message and task processing flow (up to bottom).  
 * The Green line stands for key alias (date) processing flow (up to bottom).  
   * `Cron_PubMsg2MS.py` always be invoked regularly and publics a cron message to `ms-cluster`, and then the `MSAlterIndexAliases.py` will be instantiated and try to alter the key alias with the latest date. 
