@@ -51,7 +51,7 @@ class ESAlterIndexAliases(Task.Task):
     JSON_ADD_RM_ALIAS = {"actions":[{"add":{"index":"{newidx}","alias":"{ali}"}},{"remove":{"index":"{oldidx}","alias":"{ali}"}}]}
     JSON_ADD_ALIAS = {"actions":[{"add":{"index":"{idx}","alias":"{cn}_{cat}"}}]}
     JSON_ADD_ALIASES = {"actions":[{"add":{"index":"{cn}_{cat}_*","alias":"{cn}_{cat}"}}]}
-    JSON_AGG_GROUP_BY_TYPE = {"aggs":{"group_by_type":{"terms":{"field":"_type"}}},"size":0}
+    JSON_AGG_GROUP_BY_TYPE = {"aggs":{"group_by_type":{"terms":{"field":"_type","size":100}}},"size":0}
 
 
     def exe(self, hmsg) :
