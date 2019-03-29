@@ -37,7 +37,7 @@ class MSAlterDateAliases(Task.Task):
 
     VALID_DIFF_RATIO = 0.9
     COUNT_ITERSTION_SIZE = 200
-    KEY_ALIASES_DATE = '/venraas/aliases_date/code_name/{cn}'
+    KEY_ALIASES_DATE = '["venraas","aliases_date","{cn}"]'
 
 
     def exe(self, hmsg) :
@@ -48,17 +48,22 @@ class MSAlterDateAliases(Task.Task):
             if EnumEvent[event_type] in MSAlterDateAliases.LISTEN_EVENTS:
                 objectIds = hmsg.get_objectIds()
                 code_name = hmsg.get_codename()
-
+                code_name = 'pchome'
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 logger.info('%s %s %s %s', code_name, event_type, objectIds, generation)
 
                 #-- get latest DATE from patterned keys
                 date_latest = None
                 randkeys = [ rds.randomkey() for i in range(1000) ]
+                if len(randkeys) < 1:
+                    logger.warn('none of keys.')
+                    return
+                    
                 date_set = set()
                 for k in randkeys:
                     #-- search DATE pattern from the prefix of the key, i.e. YYYYMMDD (%Y%m%d)
-                    k = k.split('/')[1]
+                    k_ary = json.loads(k)
+                    k0 = k_ary[0] if 0 < len(k_ary) else ''
                     m = re.search(r'[12]\d{3}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])', k)
                     if m:
                         date = m.group(0)
@@ -74,7 +79,7 @@ class MSAlterDateAliases(Task.Task):
                 
                 key2cnt_latest = self.key2count_GroupByKeyPrefix(code_name, date_latest)
                 for k, v in sorted(key2cnt_latest.iteritems()):
-                    logger.info('{key}: {cnt:,} '.format(key=k, cnt=v))
+                    logger.info('[{key}]: {cnt:,} '.format(key=k, cnt=v))
                  
                 date_alias = self.getDateAlias(code_name)
                 if not date_alias:
@@ -150,31 +155,31 @@ class MSAlterDateAliases(Task.Task):
 
     def key2count_GroupByKeyPrefix(self, code_name, date):
         # date forms as YYYYMMDD (%Y%m%d)
-        key_pattern = '*{cn}_*_{d}/*'.format(cn=code_name, d=date)
+        key_pattern = '*{cn}_*_{d}*'.format(cn=code_name, d=date)
         logger.info('counting patterned key: "{kp}"'.format(kp=key_pattern))
 
         key2cnt = {}
         for key in rds.scan_iter(key_pattern, MSAlterDateAliases.COUNT_ITERSTION_SIZE):
-            k = key.split('/')
-            k = '/'.join(k[:3])
-            
-            key2cnt[k] = key2cnt[k] + 1 if k in key2cnt else 1
+            k_ary = json.loads(key)
+            if 2 <= len(k_ary):
+                k = ','.join(k_ary[:2])
+                key2cnt[k] = key2cnt[k] + 1 if k in key2cnt else 1
 
         return key2cnt 
 
 
     def del_datePatternedKeys(self, code_name, date):
         # date forms as YYYYMMDD (%Y%m%d)
-        key_pattern = '*{cn}_*_{d}/*'.format(cn=code_name, d=date)
+        key_pattern = '*{cn}_*_{d}*'.format(cn=code_name, d=date)
         logger.info('scan and delete patterned key: "{kp}"'.format(kp=key_pattern))
 
         key2cnt = {}
         keys = []
         for key in rds.scan_iter(key_pattern, MSAlterDateAliases.COUNT_ITERSTION_SIZE):
-            k = key.split('/')
-            k = '/'.join(k[:3])
-            
-            key2cnt[k] = key2cnt[k] + 1 if k in key2cnt else 1
+            k_ary = json.loads(key)
+            if 2 <= len(k_ary):
+                k = ','.join(k_ary[:2])
+                key2cnt[k] = key2cnt[k] + 1 if k in key2cnt else 1
 
             keys.append(key)
             if MSAlterDateAliases.COUNT_ITERSTION_SIZE <= len(keys):
