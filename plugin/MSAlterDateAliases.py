@@ -11,11 +11,11 @@ import urllib
 from datetime import datetime, timedelta
 import requests
 import redis
-from lib.event import EnumEvent
-from lib.topic import EnumTopic
-from lib.subscr import EnumSubscript
-import lib.utility as utility
-import plugin.Task as Task
+#from lib.event import EnumEvent
+#from lib.topic import EnumTopic
+#from lib.subscr import EnumSubscript
+#import lib.utility as utility
+#import plugin.Task as Task
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
@@ -44,13 +44,13 @@ class MSAlterDateAliases(Task.Task):
         if hmsg.get_attributes():
             attributes = hmsg.get_attributes()
             event_type = hmsg.get_eventType()
-            
+           
             if EnumEvent[event_type] in MSAlterDateAliases.LISTEN_EVENTS:
                 objectIds = hmsg.get_objectIds()
                 code_name = hmsg.get_codename()
-                code_name = 'pchome'
                 generation = attributes['objectGeneration'] if 'objectGeneration' in attributes else ''
                 logger.info('%s %s %s %s', code_name, event_type, objectIds, generation)
+                
 
                 #-- get latest DATE from patterned keys
                 date_latest = None
@@ -64,7 +64,7 @@ class MSAlterDateAliases(Task.Task):
                     #-- search DATE pattern from the prefix of the key, i.e. YYYYMMDD (%Y%m%d)
                     k_ary = json.loads(k)
                     k0 = k_ary[0] if 0 < len(k_ary) else ''
-                    m = re.search(r'[12]\d{3}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])', k)
+                    m = re.search(r'[12]\d{3}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])', k0)
                     if m:
                         date = m.group(0)
                         date_set.add(date)
@@ -185,16 +185,19 @@ class MSAlterDateAliases(Task.Task):
             if MSAlterDateAliases.COUNT_ITERSTION_SIZE <= len(keys):
                 rds.delete(*keys)
                 keys = []
-        rds.delete(*keys)
+        if 0 < len(keys):
+            rds.delete(*keys)
 
-        logging.info('deleted keys which are prefixed as follows ...')
-        for k, v in sorted(key2cnt.iteritems()):
-            logger.info('{key}: {cnt:,} was deleted'.format(key=k, cnt=v))
+        if 0 < len(key2cnt):
+            logging.info('deleted keys which are prefixed as follows ...')
+            for k, v in sorted(key2cnt.iteritems()):
+                logger.info('{key}: {cnt:,} was deleted'.format(key=k, cnt=v))
 
 
 
 if '__main__' == __name__:
    aa =  MSAlterDateAliases()
    aa.exe()
+#   aa.del_datePatternedKeys('pchome', '20190326')
 
 
