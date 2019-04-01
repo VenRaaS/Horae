@@ -177,7 +177,7 @@ class UpdateGoods2xs(Task.Task):
                         subprocess.call(cmd, shell=True)
 
                         #-- push to MS
-                        cmd = 'python {py} -k gid -v gid -v availability -v sale_price -v goods_name -v goods_img_url -v update_time -lk -ttl 15552000 "{fn}" update_goods pipe'.format(py=UpdateGoods2xs.PATH_JSON2MSPY, fn=jsonPath)
+                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url  -lk -ttl 5184000 "{fn}" update_goods pipe'.format(py=UpdateGoods2xs.PATH_JSON2MSPY, fn=jsonPath)
                         logger.info(cmd)
                         subprocess.call(cmd, shell=True)
 
