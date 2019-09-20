@@ -11,12 +11,11 @@ import urllib
 from datetime import datetime, timedelta
 import requests
 import redis
-#from lib.event import EnumEvent
-#from lib.topic import EnumTopic
-#from lib.subscr import EnumSubscript
-#import lib.utility as utility
-#import plugin.Task as Task
-
+from lib.event import EnumEvent
+from lib.topic import EnumTopic
+from lib.subscr import EnumSubscript
+import lib.utility as utility
+import plugin.Task as Task
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
 logger = logging.getLogger(__file__)
@@ -26,8 +25,6 @@ HOST_RDS = 'ms-node-01'
 PORT_RDS = '6379'
 TIMEOUT_IN_SEC = 10
 rds = redis.StrictRedis(host=HOST_RDS, port=6379, socket_connect_timeout=TIMEOUT_IN_SEC)
-
-
 
 class MSAlterDateAliases(Task.Task):
     INVOKE_INTERVAL_SEC = 600
