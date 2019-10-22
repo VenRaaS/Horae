@@ -210,6 +210,8 @@ class ESAlterIndexAliases(Task.Task):
                 #-- purge unknown indices
                 all_indices = self.list_all_indices(ESAlterIndexAliases.URL_HOSTPORT)                
                 codenames = self.list_all_codenames(ESAlterIndexAliases.URL_HOSTPORT)
+                if len(codenames) == 0 : 
+                    return
                 codenames.append('venraas')
                 # indices whose prefix does not start with $codename or venraas
                 unknownIndices = filter(lambda idx: not any([ idx.startswith(c) for c in codenames ]), all_indices)
