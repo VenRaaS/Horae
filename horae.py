@@ -157,7 +157,7 @@ def main() :
                     if not 'CRON_' in k and not taskInst.is_alive():
                         del g_taskInstDict[k] 
                         logger.info('del task is_not_alive for key: %s', k)
-                    if EnumState.END == taskInst.st.state:
+                    elif EnumState.END == taskInst.st.state:
                         if taskInst.INVOKE_INTERVAL_SEC < taskInst.st.elapsed_afterend_sec():
                             del g_taskInstDict[k]
                             logger.info('del task with key: %s', k)
