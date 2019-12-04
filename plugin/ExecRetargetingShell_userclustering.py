@@ -45,7 +45,7 @@ class ExecRetargetingShell_userclustering(Task.Task):
                     m = re.match(r'uc_(\d{8})\.tar\.gz$', objectId[-18:])
                     #logger.info('%s',m)
                     if m:
-                       subprocess.call(["sh", "/home/itri/angel/uc_process.sh", gsPaths[3]])
+                       subprocess.call(["sh", "/home/itri/VenOfflineModule/Modules/UserClustering_Module/process/uc_batch_process.sh", gsPaths[3]])
 
 if '__main__' == __name__:
     class MockMsg() :
