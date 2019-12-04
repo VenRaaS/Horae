@@ -154,6 +154,9 @@ def main() :
                 keys = g_taskInstDict.keys()
                 for k in keys:
                     taskInst = g_taskInstDict[k]
+                    if not 'CRON_' in k and not taskInst.is_alive():
+                        del g_taskInstDict[k] 
+                        logger.info('del task is_not_alive for key: %s', k)
                     if EnumState.END == taskInst.st.state:
                         if taskInst.INVOKE_INTERVAL_SEC < taskInst.st.elapsed_afterend_sec():
                             del g_taskInstDict[k]
@@ -182,7 +185,7 @@ def main() :
             pull_pub.pull_messages(client, EnumSubscript['pull_es-cluster'], cb_es.callback)
             pull_pub.pull_messages(client, EnumSubscript['pull_ms-cluster'], cb_ms.callback)
 
-            time.sleep(3)
+            time.sleep(1)
                 
     except KeyboardInterrupt:
         logger.info('shutdown requested, exiting... ')
