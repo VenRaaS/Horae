@@ -9,7 +9,7 @@ Please check the following materials for more detail.
 The plugin client is able to trigger a task for data sync or modeling process.  
 Here is an overview of the Horae framework and how the interaction between message flow and data flow:
 
-![](https://github.com/VenRaaS/Horae/blob/master/doc/img/horae_overview.PNG)
+![](https://github.com/VenRaaS/Horae/blob/master/doc/img/horae_overview.PNG?raw=true)
 
 ## Setup
 * Installation of python packages (check [pip](https://www.tecmint.com/install-pip-in-linux/) if pip isn't available in your os)  
