@@ -27,7 +27,7 @@ Here is an overview of the Horae framework and how the interaction between messa
 * The Green line stands for key alias (date) processing flow (up to bottom).  
   * `Cron_PubMsg2MS.py` always be invoked regularly and publics a cron message to `ms-cluster`, and then the `MSAlterIndexAliases.py` will be instantiated and try to alter the key alias with the latest date. 
 
-![](https://drive.google.com/uc?id=1mar6oKZTKcbmrNf5DRo0xLe0E64sMIrY)
+![](https://github.com/VenRaaS/Horae/blob/master/doc/img/topic_and_plugins.PNG?raw=true)
 
 ## [Message](https://github.com/VenRaaS/Horae/wiki/Message-format)
 ```
