@@ -105,7 +105,6 @@ class sub_callback() :
                 eventType = hMsg.get_eventType()
 
                 #-- must inherit Task.Task
-                logger.info('event %s try pass to %s (inherited from Task.Task: %s)', eventType, taskClass, hasattr(taskClass, 'isTask'))
                 if not hasattr(taskClass, 'isTask'): continue
                 if not taskClass.isTask: continue
                 
@@ -113,6 +112,7 @@ class sub_callback() :
                 if not self.subscript in taskClass.LISTEN_SUBSCRIPTS: continue
                 if not eventType in EnumEvent.__members__: continue
                 if not eventType or not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
+                logger.info('%s, event %s try pass to %s', msg['attributes']['notificationConfig'], eventType, taskClass)
 
                 k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
                 logger.info('task instance key: %s', k)
