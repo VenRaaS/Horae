@@ -21,8 +21,10 @@ def pull_messages(client, sub_enum, callback_fn):
     try:
         logger.info("pull from {} ...".format(subscription))
 
+        #--  pulls messages from the server
+        #    see https://cloud.google.com/pubsub/docs/reference/rest/v1/projects.subscriptions/pull
         body = {
-            'returnImmediately': False,
+            'returnImmediately': True,
             'maxMessages': 1
         }
         resp = client.projects().subscriptions().pull(
