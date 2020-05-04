@@ -1,7 +1,7 @@
 
 
 ## Overview
-In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) to pass the message/status between modules.  
+In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a service, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
 Please check the following materials for more detail.
 * [Pub/Sub concepts and message flow](https://cloud.google.com/pubsub/docs/overview#concepts)
 * [Subscriber overview](https://cloud.google.com/pubsub/docs/subscriber)
