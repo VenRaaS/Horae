@@ -44,7 +44,7 @@ def pull_messages(client, sub_enum, callback_fn):
                     callback_fn(message)
 
             ack_body = {'ackIds': ack_ids}
-            logging.info(ack_body)
+#            logging.info(ack_body)
             client.projects().subscriptions().acknowledge(
                     subscription=subscription, body=ack_body).execute(num_retries=NUM_RETRIES)
     except Exception as e:
