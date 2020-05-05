@@ -188,7 +188,7 @@ def main() :
             time.sleep(1)
                 
     except KeyboardInterrupt:
-        logger.info('shutdown requested, exiting... ')
+        logger.info('Ctrl + c shutdown requested, exiting... ')
 
     except Exception as e:
         logger.error(e, exc_info=True)
