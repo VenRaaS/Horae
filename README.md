@@ -39,6 +39,9 @@ Here is an overview of the Horae framework and how the interaction between messa
 ...
 ```
 
+## Sequence diagram of Message dispatch and Event driven plugin
+![](https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG)
+
 ## sub_callback and plugin modules
 TODO ...
 
