@@ -1,5 +1,3 @@
-
-
 ## Overview
 In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a service, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
 Please check the following materials for more detail.
@@ -43,6 +41,7 @@ Here is an overview of the Horae framework and how the interaction between messa
 ![](https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG)
 
 ## Class relationship between sub_callback and plugin module
+* sub_callback is a broker which receives the subscription event and spawns the plugin object under certain condictions. 
 <img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/uml_sub_callback_and_plugin.PNG" alt="sub_callback and plugin" width="400">
 
 ## Reference
