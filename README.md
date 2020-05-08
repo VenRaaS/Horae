@@ -40,7 +40,7 @@ Here is an overview of the Horae framework and how the interaction between messa
 <img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG" alt="sub_callback and plugin" width="800">
 
 ## Class relationship between sub_callback and plugin module
-* An object of sub_callback is a broker which receives the specified subscription event and spawns the plugin object under certain condictions. 
+* An object of sub_callback is a broker which receives the specified subscription event and spawns the plugin object under the certain condictions. 
 * All plugin inherit from `threading.Thread`, each of them process the task in it own thread.
 * The plugin contains a TaskStatus field which indicates the status of the current plugin and the plugin be terminated only if its status is equal to `EnumState.END`. 
 
