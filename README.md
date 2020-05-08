@@ -1,5 +1,9 @@
 ## Overview
-In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a service, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
+In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a event-driven service, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
+
+For now, you could handle the event-driven task via [Cloud Functions](https://cloud.google.com/functions/) elegantly.
+If you still want to control event message more precisely, eg. eliminate duplicate events, welcome to take a look at the content below.
+
 Please check the following materials for more detail.
 * [Pub/Sub concepts and message flow](https://cloud.google.com/pubsub/docs/overview#concepts)
 * [Subscriber overview](https://cloud.google.com/pubsub/docs/subscriber)
