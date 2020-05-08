@@ -42,8 +42,8 @@ Here is an overview of the Horae framework and how the interaction between messa
 ## Sequence diagram of Message dispatch and Event driven plugin
 ![](https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG)
 
-## Class relationship between sub_callback and plugin modules
-![](https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/uml_sub_callback_and_plugin.PNG)
+## Class relationship between sub_callback and plugin module
+<img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/uml_sub_callback_and_plugin.PNG" alt="sub_callback and plugin" width="400">
 
 ## Reference
 * [Google API Client Libraries](https://github.com/google/google-api-python-client)
