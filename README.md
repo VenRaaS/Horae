@@ -15,7 +15,6 @@ Here is an overview of the Horae framework and how the interaction between messa
   
 * [Applying notification to a bucket with gsutil](https://github.com/VenRaaS/Horae/wiki/Sync-GOCC-to-BigQuery-and-ES-via-Pub-Sub-Notifications-with-Cloud-Storage#applying-notification-to-a-bucket-with-gsutil)
 
-
 ## [Topics and Subscriptions](https://cloud.google.com/pubsub/docs/admin)
 * [topic.py](https://github.com/VenRaaS/Horae/blob/master/lib/topic.py)
 * [subscr.py](https://github.com/VenRaaS/Horae/blob/master/lib/subscr.py)
@@ -38,14 +37,14 @@ Here is an overview of the Horae framework and how the interaction between messa
 ```
 
 ## Sequence diagram of Message dispatch and Event driven plugin
-![](https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG)
+<img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/sd_event_driven_plugin.PNG" alt="sub_callback and plugin" width="800">
 
 ## Class relationship between sub_callback and plugin module
 * An object of sub_callback is a broker which receives the specified subscription event and spawns the plugin object under certain condictions. 
 * All plugin inherit from `threading.Thread`, each of them process the task in it own thread.
 * The plugin contains a TaskStatus field which indicates the status of the current plugin and the plugin be terminated only if its status is equal to `EnumState.END`. 
 
-<img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/uml_sub_callback_and_plugin.PNG" alt="sub_callback and plugin" width="400">
+<img src="https://raw.githubusercontent.com/VenRaaS/Horae/master/doc/img/uml_sub_callback_and_plugin.PNG" alt="sub_callback and plugin" width="500">
 
 ## Reference
 * [Google API Client Libraries](https://github.com/google/google-api-python-client)
