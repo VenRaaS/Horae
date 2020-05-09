@@ -1,13 +1,13 @@
 ## Overview
-In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a event-driven service, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
-
-For now, you could handle the event-driven task via [Cloud Functions](https://cloud.google.com/functions/) elegantly.
-If you still want to control event message more precisely, eg. discared redundant events, welcome to take a look at the content below.
-
 ### Before you begin
 Please check the following materials for preliminary knowledge.
 * [Pub/Sub concepts and message flow](https://cloud.google.com/pubsub/docs/overview#concepts)
 * [Subscriber overview](https://cloud.google.com/pubsub/docs/subscriber)
+
+In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overview) and make a event-driven application, Horae, which contains multiple plugins for task executions with the predefined event condictions.  
+
+For now, you could handle the event-driven task via [Cloud Functions](https://cloud.google.com/functions/) elegantly.
+If you still want to control event message more precisely, eg. discared redundant events, welcome to take a look at the content below.
 
 The plugin client is able to trigger a task for data sync or modeling process.  
 Here is an overview of the Horae framework and how the interaction between message flow and data flow:
