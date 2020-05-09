@@ -4,7 +4,8 @@ In venraas, we leverage [GCP Pub/Sub](https://cloud.google.com/pubsub/docs/overv
 For now, you could handle the event-driven task via [Cloud Functions](https://cloud.google.com/functions/) elegantly.
 If you still want to control event message more precisely, eg. discared redundant events, welcome to take a look at the content below.
 
-Please check the following materials for more detail.
+### Before you begin
+Please check the following materials for preliminary knowledge.
 * [Pub/Sub concepts and message flow](https://cloud.google.com/pubsub/docs/overview#concepts)
 * [Subscriber overview](https://cloud.google.com/pubsub/docs/subscriber)
 
