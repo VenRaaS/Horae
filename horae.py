@@ -112,7 +112,7 @@ class sub_callback() :
                 if not self.subscript in taskClass.LISTEN_SUBSCRIPTS: continue
                 if not eventType in EnumEvent.__members__: continue
                 if not eventType or not EnumEvent[eventType] in taskClass.LISTEN_EVENTS: continue
-                logger.info('%s, event %s try pass to %s', msg['attributes']['notificationConfig'], eventType, taskClass)
+                logger.info('%s, event %s try pass to %s', msg, eventType, taskClass)
 
                 k = '{}/{}/{}/{}'.format(self.subscript.name, eventType, hMsg.get_codename(), mod_name)
                 logger.info('task instance key: %s', k)
