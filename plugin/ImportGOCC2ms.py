@@ -123,7 +123,7 @@ class ImportGOCC2ms(Task.Task):
                     subprocess.call(cmd, shell=True)
 
                     if srcTb.startswith('goods_'):
-                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     elif srcTb.startswith('category_'):
                         cmd = 'python {py} -k category_code  -v le -v p_category_code  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     logger.info(cmd)
