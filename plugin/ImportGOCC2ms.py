@@ -28,9 +28,11 @@ class ImportGOCC2ms(Task.Task):
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
     PUB_TOPIC = EnumTopic['ms-cluster']
 
-    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
+    #SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
+    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name,gid,availability,goods_name,goods_img_url,goods_page_url, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time FROM {} WHERE AVAILABILITY = "1"'
     
-    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, \'category\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
+    #SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, \'category\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
+    SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, \'category\' as table_name,category_code,p_category_code, SUBSTR(CAST(update_time AS STRING),0,19) as update_time  FROM {}'
 
     URL_ES_GOCC_COUNT = 'http://es-node-01:9200/{}_gocc_{}/_count'
 
