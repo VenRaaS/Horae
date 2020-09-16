@@ -16,7 +16,7 @@ class Cron_PubMsg2MS(Task.Task):
     LISTEN_EVENTS = []
     PUB_TOPIC = EnumTopic['ms-cluster']
 
-    LB_ES_HOSTS = 'es-node-01'
+    LB_ES_HOSTS = 'es-node-01.venraas.private'
     URL_VENRAAS_COMS = 'http://{h}:9200/venraas/_search?sort=update_dt:desc&size=1'
 
 
