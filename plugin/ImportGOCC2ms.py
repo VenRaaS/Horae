@@ -94,7 +94,7 @@ class ImportGOCC2ms(Task.Task):
                     subprocess.call(cmd.split(' '))
 
                     #-- export to GCS
-                    srcFN = '{cn}_{tn}'.format(cn=codename, tn=srcTb)
+                    srcFN = '{cn}_{tn}_*'.format(cn=codename, tn=srcTb)
                     gsJsonPath = os.path.join(gsDataPath, srcFN)
                     cmd = 'bq extract --destination_format=NEWLINE_DELIMITED_JSON \"{}\" {}'.format(expoDSTb, gsJsonPath)
                     logger.info(cmd)
@@ -106,23 +106,23 @@ class ImportGOCC2ms(Task.Task):
                     subprocess.call(cmd.split(' '))
 
                     #-- lowercase of json KEY, i.e. field name
-                    lowerkeyFN = '{}.lk'.format(srcFN)
-                    lowerkeyFP = os.path.join(unpackPath, lowerkeyFN)
+                    #lowerkeyFN = '{}.lk'.format(srcFN)
+                    #lowerkeyFP = os.path.join(unpackPath, lowerkeyFN)
 
-                    with io.open(lowerkeyFP, 'w', encoding='utf-8') as fo:
-                        rawFP = os.path.join(unpackPath, srcFN)
-                        with io.open(rawFP, 'r', encoding='utf-8') as fi: 
-                            for line in fi:
-                                o = json.loads(line)
-                                o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
-                                fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
+                    #with io.open(lowerkeyFP, 'w', encoding='utf-8') as fo:
+                    #    rawFP = os.path.join(unpackPath, srcFN)
+                    #    with io.open(rawFP, 'r', encoding='utf-8') as fi: 
+                    #        for line in fi:
+                    #            o = json.loads(line)
+                    #            o_lowerkey = dict( (k.lower(), v) for k, v in o.iteritems() )
+                    #            fo.write(json.dumps(o_lowerkey, ensure_ascii=False) + '\n')
                    
                     #-- >> (cat arrow), in order to trigger file change detection of logstash
-                    jsonFN = '{}.json'.format(srcFN) 
-                    jsonFP = os.path.join(unpackPath, jsonFN)
-                    cmd = 'cat {} >> {}'.format(lowerkeyFP , jsonFP)
-                    logger.info(cmd)
-                    subprocess.call(cmd, shell=True)
+                    #jsonFN = '{}.json'.format(srcFN) 
+                    jsonFP = os.path.join(unpackPath, srcFN)
+                    #cmd = 'cat {} >> {}'.format(lowerkeyFP , jsonFP)
+                    #logger.info(cmd)
+                    #subprocess.call(cmd, shell=True)
 
                     if srcTb.startswith('goods_'):
                         cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
