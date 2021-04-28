@@ -23,11 +23,13 @@ class UpdateGoods2xs(Task.Task):
     LISTEN_SUBSCRIPTS = [ EnumSubscript['pull_bucket_ven-custs'] ]
     LISTEN_EVENTS = [ EnumEvent['OBJECT_FINALIZE'] ]
 
-    HEADER_GOODS = 'GID	PGID	GOODS_NAME	GOODS_KEYWORD	GOODS_BRAND	GOODS_DESCRIBE	GOODS_SPEC	GOODS_IMG_URL	AVAILABILITY	CURRENCY	SALE_PRICE	PROVIDER	BARCODE_EAN13	BARCODE_UPC	FIRST_RTS_DATE	UPDATE_TIME'
-
-    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {ds}.{tb}'
+    #HEADER_GOODS = 'GID	PGID	GOODS_NAME	GOODS_KEYWORD	GOODS_BRAND	GOODS_DESCRIBE	GOODS_SPEC	GOODS_IMG_URL	AVAILABILITY	CURRENCY	SALE_PRICE	PROVIDER	BARCODE_EAN13	BARCODE_UPC	FIRST_RTS_DATE	UPDATE_TIME'
+    HEADER_GOODS = 'GID     PGID    GOODS_NAME      GOODS_KEYWORD   GOODS_BRAND     GOODS_DESCRIBE  GOODS_SPEC      GOODS_IMG_URL   GOODS_PAGE_URL  AVAILABILITY    CURRENCY        SALE_PRICE      PROVIDER        BARCODE_EAN13   BARCODE_UPC     FIRST_RTS_DATE  UPDATE_TIME'
+  #SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid, SAFE_CAST(pgid AS string) AS pgid, SAFE_CAST(availability AS string) AS availability, SAFE_CAST(sale_price AS string) AS sale_price, SAFE_CAST(provider AS string) AS provider, SAFE_CAST(first_rts_date AS datetime) AS first_rts_date, SAFE_CAST(update_time AS datetime) AS update_time,  * except (gid, pgid, availability, sale_price, provider, first_rts_date, update_time) FROM {ds}.{tb}'
+    SQL2UNIMA_GOODS = 'SELECT SAFE_CAST(gid AS string) AS gid,  SAFE_CAST(availability AS string) AS availability,goods_name, goods_img_url,goods_page_url,SAFE_CAST(sale_price AS float64) AS sale_price,  SAFE_CAST(update_time AS string) AS update_time    FROM {ds}.{tb}'
     
-    SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
+    #SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(first_rts_date AS STRING),0,19) as first_rts_date, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (first_rts_date, update_time) from {ds}.{tb}'
+    SQL_FORM_EXPORT_GOODS = 'SELECT \'{cn}\' as code_name, \'goods\' as table_name,gid,availability,goods_name,goods_img_url,goods_page_url,sale_price, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time from {ds}.{tb}'
 
     PATH_JSON2MSPY = '/home/itri/memstore-client/json2ms.py'
     LOCAL_PATH_JSON = '/tmp/gocc2xs_update'
@@ -120,7 +122,7 @@ class UpdateGoods2xs(Task.Task):
                             extTb = 'update_ext_{}'.format(baseName.lower())
 
                             if extTb.endswith('goods'):
-                                cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, extTb, gsPath)
+                                cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter='"\t"' {}.{} {}'.format(dataset, extTb, gsPath)
                                 logger.info(cmd)
                                 out = subprocess.check_output(cmd.split(' '))
                                 logger.info(out)
@@ -217,7 +219,15 @@ class UpdateGoods2xs(Task.Task):
 
                 fpath = os.path.join(dirPath, fn) 
                 with open(fpath, 'rb') as f :
-                    reader = csv.reader(f, delimiter='\t')
+                    line_num = 0
+                    for line in f:
+                        if '\0' in line:
+                            print(line_num, line)
+                        line_num = line_num + 1
+
+                with open(fpath, 'rb') as f :
+                    
+                    reader = csv.reader((line.replace('\0','') for line in f), delimiter='\t')
                 
                     num_fields_1st_row = 0
                     for fields in reader :
