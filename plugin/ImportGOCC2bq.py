@@ -144,7 +144,7 @@ class ImportGOCC2bq(Task.Task):
                             tmpTb = 'ext_{}'.format(baseName.lower())
                             dataset = '{}_tmp'.format(codename)
 
-                            cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter=''\t'' {}.{} {}'.format(dataset, tmpTb, gsPath)
+                            cmd = 'bq load --autodetect --replace --source_format=CSV --field_delimiter='"\t"' {}.{} {}'.format(dataset, tmpTb, gsPath)
                             logger.info(cmd)
                             out = subprocess.check_output(cmd.split(' '))
                             logger.info(out)

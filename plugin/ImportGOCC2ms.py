@@ -1,3 +1,4 @@
+import time
 import csv
 import io
 import json
@@ -29,7 +30,7 @@ class ImportGOCC2ms(Task.Task):
     PUB_TOPIC = EnumTopic['ms-cluster']
 
     #SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time,  * EXCEPT (pgid, goods_describe, goods_spec, currency, provider, barcode_ean13, barcode_upc, first_rts_date, update_time) FROM {} WHERE AVAILABILITY = "1"'
-    SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name,gid,availability,goods_name,goods_img_url,goods_page_url,sale_price, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time FROM {} WHERE AVAILABILITY = "1"'
+    #SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name,gid,availability,goods_name,goods_img_url,goods_page_url,sale_price, SUBSTR(CAST(update_time AS STRING),0,19) AS update_time FROM {} WHERE AVAILABILITY = "1"'
     #SQL_EXPORT_UNIMA_GOODS = 'SELECT \'{}\' as code_name, \'goods\' as table_name,* FROM {} WHERE AVAILABILITY = "1"'
     
     #SQL_EXPORT_UNIMA_CATEGORY = 'SELECT \'{}\' as code_name, \'category\' as table_name, SUBSTR(CAST(update_time AS STRING),0,19) as update_time,  * EXCEPT (update_time) FROM {}'
@@ -78,7 +79,7 @@ class ImportGOCC2ms(Task.Task):
 
                     sql = ''
                     if srcTb.startswith('goods_'):
-                        sql = ImportGOCC2ms.SQL_EXPORT_UNIMA_GOODS.format(codename, t)
+                        #sql = ImportGOCC2ms.SQL_EXPORT_UNIMA_GOODS.format(codename, t)
                         m = re.search(r'_(\d{8})$', srcTb)
                         if m:
                             gocc_date = m.group(1)
@@ -87,12 +88,19 @@ class ImportGOCC2ms(Task.Task):
                     else:
                         continue
 
+                    
                     expoDS = '{}_tmp'.format(codename)
                     expoTb = 'gocc2ms_{}'.format(srcTb)
                     expoDSTb = '{}.{}'.format(expoDS, expoTb)
-                    cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={} {}'.format(expoDSTb, sql)
-                    logger.info(cmd)
-                    subprocess.call(cmd.split(' '))
+                    if srcTb.startswith('category_'):
+                       cmd = 'bq query -n 0 --replace --use_legacy_sql=False --destination_table={} {}'.format(expoDSTb, sql)
+                       logger.info(cmd)
+                       subprocess.call(cmd.split(' '))
+                    else:
+                       cmd  = 'bash  /home/itri/Horae/plugin/EXPORT_UNIMA_GOODS.sh \"{}\" \"{}\" \"{}\"'.format(codename,t,expoDSTb)   
+                       logger.info(cmd)
+                       subprocess.call(cmd,shell=True)
+                       time.sleep(120)
 
                     #-- export to GCS
                     srcFN = '{cn}_{tn}_*'.format(cn=codename, tn=srcTb)
@@ -126,7 +134,7 @@ class ImportGOCC2ms(Task.Task):
                     #subprocess.call(cmd, shell=True)
 
                     if srcTb.startswith('goods_'):
-                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url -v shop_url -v shop_id -v margin_rate  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     elif srcTb.startswith('category_'):
                         cmd = 'python {py} -k category_code  -v le -v p_category_code  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     logger.info(cmd)

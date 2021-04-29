@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(fi
 logger = logging.getLogger(__file__)
 
 #-- redis-py, see https://github.com/andymccurdy/redis-py
-HOST_RDS = 'ms-node-01'
+HOST_RDS = 'ms-node-01.venraas.private'
 PORT_RDS = '6379'
 TIMEOUT_IN_SEC = 10
 rds = redis.StrictRedis(host=HOST_RDS, port=6379, socket_connect_timeout=TIMEOUT_IN_SEC)
