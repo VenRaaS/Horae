@@ -97,10 +97,10 @@ class ImportGOCC2ms(Task.Task):
                        logger.info(cmd)
                        subprocess.call(cmd.split(' '))
                     else:
-                       cmd  = 'bash  /home/itri/Horae/plugin/EXPORT_UNIMA_GOODS.sh \"{}\" \"{}\" \"{}\"'.format(codename,t,expoDSTb)   
+                       cmd = ['bash', '/home/itri/Horae/plugin/EXPORT_UNIMA_GOODS.sh', codename, t, expoDSTb]   
                        logger.info(cmd)
-                       subprocess.call(cmd,shell=True)
-                       time.sleep(120)
+                       subprocess.call(cmd)
+                       time.sleep(180)
 
                     #-- export to GCS
                     srcFN = '{cn}_{tn}_*'.format(cn=codename, tn=srcTb)
@@ -134,7 +134,7 @@ class ImportGOCC2ms(Task.Task):
                     #subprocess.call(cmd, shell=True)
 
                     if srcTb.startswith('goods_'):
-                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url -v shop_url -v shop_id -v shop_name -v margin_rate  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
+                        cmd = 'python {py} -k gid  -v availability -v sale_price -v goods_name -v goods_img_url -v goods_page_url -v start_date -v end_date -v location -v shop_url -v shop_id -v shop_name -v margin_rate -v price -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     elif srcTb.startswith('category_'):
                         cmd = 'python {py} -k category_code  -v le -v p_category_code  -lk -ttl 5184000 "{fn}" gocc pipe'.format(py=ImportGOCC2ms.PATH_JSON2MSPY, fn=jsonFP)
                     logger.info(cmd)
